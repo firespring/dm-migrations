@@ -2,16 +2,21 @@ source 'https://rubygems.org'
 
 gemspec
 
-DM_VERSION     = '~> 1.3.0.beta'
-DO_VERSION     = '~> 0.10.15'
-DM_DO_ADAPTERS = %w[sqlite postgres mysql oracle sqlserver]
+DM_VERSION     = '~> 1.3.0.beta'.freeze
+DO_VERSION     = '~> 0.10.15'.freeze
+DM_DO_ADAPTERS = %w(sqlite postgres mysql oracle sqlserver).freeze
 GIT_BRANCH     = ENV.fetch('GIT_BRANCH', 'master')
 
 gem 'dm-core', DM_VERSION, github: 'datamapper/dm-core', branch: GIT_BRANCH
 
+group :development do
+  gem 'rake',  '~> 0.9.2'
+  gem 'rspec', '~> 1.3.2'
+end
+
 group :datamapper do
-  adapters = ENV['ADAPTER'] || ENV['ADAPTERS']
-  adapters = adapters.to_s.tr(',', ' ').split.uniq - %w[in_memory]
+  adapters = ENV['ADAPTER'] || ENV.fetch('ADAPTERS', nil)
+  adapters = adapters.to_s.tr(',', ' ').split.uniq - %w(in_memory)
 
   if (do_adapters = DM_DO_ADAPTERS & adapters).any?
     do_options = {}
@@ -31,7 +36,7 @@ group :datamapper do
     gem "dm-#{adapter}-adapter", DM_VERSION, github: "datamapper/dm-#{adapter}-adapter", branch: GIT_BRANCH
   end
 
-  plugins = ENV['PLUGINS'] || ENV['PLUGIN']
+  plugins = ENV['PLUGINS'] || ENV.fetch('PLUGIN', nil)
   plugins = plugins.to_s.tr(',', ' ').split
 
   plugins.each do |plugin|
