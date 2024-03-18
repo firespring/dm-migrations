@@ -2,7 +2,7 @@
 # Roughly following Rails conventions, and mostly based on Padrino's dm:* tasks
 #
 # Cf. https://github.com/padrino/padrino-framework/blob/master/padrino-gen/lib/padrino-gen/padrino-tasks/datamapper.rb
-#     https://github.com/datamapper/dm-rails/blob/master/lib/dm-rails/railties/database.rake
+#     https://github.com/fireapring/dm-rails/blob/master/lib/dm-rails/railties/database.rake
 #
 
 require 'rake'
