@@ -3,7 +3,7 @@ require File.expand_path('../lib/dm-migrations/version', __FILE__)
 Gem::Specification.new do |gem|
   gem.authors       = ['Dan Kubb']
   gem.email         = ['dan.kubb@gmail.com']
-  gem.summary       = 'DataMapper plugin for writing and speccing migrations'
+  gem.summary       = 'DataMapper plugin for writing and spec-ing migrations'
   gem.description   = gem.summary
   gem.homepage      = 'https://datamapper.org'
 
