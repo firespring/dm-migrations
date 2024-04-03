@@ -7,16 +7,16 @@ module DataMapper
     # correct order.
     #
     # The order that migrations are run in is set by the first argument. It is not
-    # neccessary that this be unique; migrations with the same version number are
+    # necessary that this be unique; migrations with the same version number are
     # expected to be able to be run in any order.
     #
     # The second argument is the name of the migration. This name is used internally
     # to track if the migration has been run. It is required that this name be unique
     # across all migrations.
     #
-    # Addtionally, it accepts a number of options:
+    # Additionally, it accepts a number of options:
     # * <tt>:database</tt> If you defined several DataMapper::database instances use this
-    #   to choose which one to run the migration gagainst. Defaults to <tt>:default</tt>.
+    #   to choose which one to run the migration against. Defaults to <tt>:default</tt>.
     #   Migrations are tracked individually per database.
     # * <tt>:verbose</tt> true/false, defaults to true. Determines if the migration should
     #   output its status messages when it runs.
@@ -39,10 +39,10 @@ module DataMapper
     # Its recommended that you stick with raw SQL for migrations that manipulate data. If
     # you write a migration using a model, then later change the model, there's a
     # possibility the migration will no longer work. Using SQL will always work.
-    def migration( number, name, opts = {}, &block )
-      raise "Migration name conflict: '#{name}'" if migrations.map { |m| m.name }.include?(name.to_s)
+    def migration(number, name, opts = {}, &block)
+      raise "Migration name conflict: '#{name}'" if migrations.map(&:name).include?(name.to_s)
 
-      migrations << DataMapper::Migration.new( number, name.to_s, opts, &block )
+      migrations << DataMapper::Migration.new(number, name.to_s, opts, &block)
     end
 
     # Run all migrations that need to be run. In most cases, this would be called by a
@@ -53,32 +53,23 @@ module DataMapper
     # with a position less than or equal to the level.
     def migrate_up!(level = nil)
       migrations.sort.each do |migration|
-        if level.nil?
-          migration.perform_up()
-        else
-          migration.perform_up() if migration.position <= level.to_i
-        end
+        migration.perform_up if level.nil? || migration.position <= level.to_i
       end
     end
 
     # Run all the down steps for the migrations that have already been run.
     #
     # has an optional argument 'level' which, if supplied, only performs the
-    # down migrations with a postion greater than the level.
+    # down migrations with a position greater than the level.
     def migrate_down!(level = nil)
       migrations.sort.reverse.each do |migration|
-        if level.nil?
-          migration.perform_down()
-        else
-          migration.perform_down() if migration.position > level.to_i
-        end
+        migration.perform_down if level.nil? || migration.position > level.to_i
       end
     end
 
     def migrations
       @@migrations ||= []
     end
-
   end
 end
 

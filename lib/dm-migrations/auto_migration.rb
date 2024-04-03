@@ -3,10 +3,9 @@ require 'dm-core'
 module DataMapper
   module Migrations
     module SingletonMethods
-
       # destructively migrates the repository upwards to match model definitions
       #
-      # @param [Symbol] name repository to act on, :default is the default
+      # @param [Symbol] repository_name repository to act on, :default is the default
       #
       # @api public
       def migrate!(repository_name = nil)
@@ -15,7 +14,7 @@ module DataMapper
 
       # drops and recreates the repository upwards to match model definitions
       #
-      # @param [Symbol] name repository to act on, :default is the default
+      # @param [Symbol] repository_name repository to act on, :default is the default
       #
       # @api public
       def auto_migrate!(repository_name = nil)
@@ -27,24 +26,20 @@ module DataMapper
         repository_execute(:auto_upgrade!, repository_name)
       end
 
-    private
-
       # @api semipublic
-      def auto_migrate_down!(repository_name)
+      private def auto_migrate_down!(repository_name)
         repository_execute(:auto_migrate_down!, repository_name)
       end
 
       # @api semipublic
-      def auto_migrate_up!(repository_name)
+      private def auto_migrate_up!(repository_name)
         repository_execute(:auto_migrate_up!, repository_name)
       end
 
       # @api private
-      def repository_execute(method, repository_name)
+      private def repository_execute(method, repository_name)
         models = DataMapper::Model.descendants
-        if repository_name
-          models = models.select { |m| m.repository_name == repository_name }
-        end
+        models = models.select { |m| m.repository_name == repository_name } if repository_name
         models.each do |model|
           model.send(method, model.repository_name)
         end
@@ -63,33 +58,33 @@ module DataMapper
       # @api semipublic
       def storage_exists?(storage_name)
         adapter = self.adapter
-        if adapter.respond_to?(:storage_exists?)
-          adapter.storage_exists?(storage_name)
-        end
+        return false unless adapter.respond_to?(:storage_exists?)
+
+        adapter.storage_exists?(storage_name)
       end
 
       # @api semipublic
       def upgrade_model_storage(model)
         adapter = self.adapter
-        if adapter.respond_to?(:upgrade_model_storage)
-          adapter.upgrade_model_storage(model)
-        end
+        return unless adapter.respond_to?(:upgrade_model_storage)
+
+        adapter.upgrade_model_storage(model)
       end
 
       # @api semipublic
       def create_model_storage(model)
         adapter = self.adapter
-        if adapter.respond_to?(:create_model_storage)
-          adapter.create_model_storage(model)
-        end
+        return unless adapter.respond_to?(:create_model_storage)
+
+        adapter.create_model_storage(model)
       end
 
       # @api semipublic
       def destroy_model_storage(model)
         adapter = self.adapter
-        if adapter.respond_to?(:destroy_model_storage)
-          adapter.destroy_model_storage(model)
-        end
+        return unless adapter.respond_to?(:destroy_model_storage)
+
+        adapter.destroy_model_storage(model)
       end
 
       # Destructively automigrates the data-store to match the model.
@@ -108,10 +103,9 @@ module DataMapper
       def auto_upgrade!
         DataMapper.auto_upgrade!(name)
       end
-    end # module Repository
+    end
 
     module Model
-
       # @api private
       def self.included(mod)
         mod.descendants.each { |model| model.extend self }
@@ -125,7 +119,7 @@ module DataMapper
       # Destructively automigrates the data-store to match the model
       # REPEAT: THIS IS DESTRUCTIVE
       #
-      # @param Symbol repository_name the repository to be migrated
+      # @param [Symbol] repository_name the repository to be migrated
       #
       # @api public
       def auto_migrate!(repository_name = self.repository_name)
@@ -137,7 +131,7 @@ module DataMapper
       # Safely migrates the data-store to match the model
       # preserving data already in the data-store
       #
-      # @param Symbol repository_name the repository to be migrated
+      # @param [Symbol] repository_name the repository to be migrated
       #
       # @api public
       def auto_upgrade!(repository_name = self.repository_name)
@@ -154,7 +148,7 @@ module DataMapper
       # deletes all the models.
       # REPEAT: THIS IS DESTRUCTIVE
       #
-      # @param Symbol repository_name the repository to be migrated
+      # @param [Symbol] repository_name the repository to be migrated
       #
       # @api private
       def auto_migrate_down!(repository_name = self.repository_name)
@@ -169,7 +163,7 @@ module DataMapper
 
       # Auto migrates the data-store to match the model
       #
-      # @param Symbol repository_name the repository to be migrated
+      # @param [Symbol] repository_name the repository to be migrated
       #
       # @api private
       def auto_migrate_up!(repository_name = self.repository_name)
@@ -181,12 +175,11 @@ module DataMapper
           base_model.auto_migrate_up!(repository_name)
         end
       end
-
-    end # module Model
+    end
 
     def self.include_migration_api
       DataMapper.extend(SingletonMethods)
-      [ :Repository, :Model ].each do |name|
+      %i(Repository Model).each do |name|
         DataMapper.const_get(name).send(:include, const_get(name))
       end
       DataMapper::Model.append_extensions(Model)
@@ -194,11 +187,9 @@ module DataMapper
         Adapters.include_migration_api(DataMapper::Inflector.demodulize(adapter_class.name))
       end
     end
-
   end
 
   module Adapters
-
     def self.include_migration_api(const_name)
       require auto_migration_extensions(const_name)
       if Migrations.const_defined?(const_name)
@@ -215,15 +206,12 @@ module DataMapper
     end
 
     class << self
-    private
-
       # @api private
-      def auto_migration_extensions(const_name)
+      private def auto_migration_extensions(const_name)
         name = adapter_name(const_name)
         name = 'do' if name == 'dataobjects'
         "dm-migrations/adapters/dm-#{name}-adapter"
       end
-
     end
 
     extendable do
@@ -233,9 +221,7 @@ module DataMapper
         super
       end
     end
-
-  end # module Adapters
+  end
 
   Migrations.include_migration_api
-
-end # module DataMapper
+end

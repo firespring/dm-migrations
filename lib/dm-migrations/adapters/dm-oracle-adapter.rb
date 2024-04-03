@@ -4,8 +4,7 @@ require 'dm-migrations/adapters/dm-do-adapter'
 module DataMapper
   module Migrations
     module OracleAdapter
-
-      include DataObjectsAdapter
+      include SQL, DataObjectsAdapter
 
       # @api private
       def self.included(base)
@@ -28,6 +27,7 @@ module DataMapper
       # @api semipublic
       def sequence_exists?(sequence_name)
         return false unless sequence_name
+
         statement = DataMapper::Ext::String.compress_lines(<<-SQL)
           SELECT COUNT(*)
           FROM all_sequences
@@ -68,7 +68,6 @@ module DataMapper
         "DROP TABLE #{table_name} CASCADE CONSTRAINTS"
       end
 
-
       # @api semipublic
       def create_model_storage(model)
         name       = self.name
@@ -87,21 +86,18 @@ module DataMapper
             @truncated_tables[table_name] = nil
           else
             # forced drop of table if properties are different
-            if truncate_or_delete
-              destroy_model_storage(model, true)
-            end
+            destroy_model_storage(model, true) if truncate_or_delete
 
-            statements = [ create_table_statement(connection, model, properties) ]
+            statements = [create_table_statement(connection, model, properties)]
             statements.concat(create_index_statements(model))
             statements.concat(create_unique_index_statements(model))
             statements.concat(create_sequence_statements(model))
 
             statements.each do |statement|
-              command   = connection.create_command(statement)
+              command = connection.create_command(statement)
               command.execute_non_query
             end
           end
-
         end
 
         true
@@ -120,7 +116,7 @@ module DataMapper
             when :delete
               execute(delete_table_statement(model))
             else
-              raise ArgumentError, "Unsupported auto_migrate_with option"
+              raise ArgumentError, 'Unsupported auto_migrate_with option'
             end
             @truncated_tables ||= {}
             @truncated_tables[table_name] = true
@@ -135,30 +131,28 @@ module DataMapper
         unless truncate_or_delete && !reset_sequences && !forced
           if sequence_exists?(model_sequence_name(model))
             statement = if table_is_truncated && !forced
-              reset_sequence_statement(model)
-            else
-              drop_sequence_statement(model)
-            end
+                          reset_sequence_statement(model)
+                        else
+                          drop_sequence_statement(model)
+                        end
             execute(statement) if statement
           end
         end
         true
       end
 
-      private
-
-      def storage_has_all_fields?(table_name, properties)
+      private def storage_has_all_fields?(table_name, properties)
         properties.map { |property| oracle_upcase(property.field) }.sort == storage_fields(table_name).sort
       end
 
       # If table or column name contains just lowercase characters then do uppercase
       # as uppercase version will be used in Oracle data dictionary tables
-      def oracle_upcase(name)
-        name =~ /[A-Z]/ ? name : name.upcase
+      private def oracle_upcase(name)
+        (name =~ /[A-Z]/) ? name : name.upcase
       end
 
-      module SQL #:nodoc:
-#        private  ## This cannot be private for current migrations
+      module SQL # :nodoc:
+        # private  ## This cannot be private for current migrations
 
         # @api private
         def schema_name
@@ -169,12 +163,12 @@ module DataMapper
         def property_schema_hash(property)
           schema = super
 
-          if (property.kind_of?(Property::Binary))
+          if property.is_a?(Property::Binary)
             # BLOB does not support length
             schema.delete(:length)
           end
 
-          if (property.primitive == String && property.length > 4000)
+          if property.primitive == String && property.length > 4000
             # Oracle doesn't support string over 4000 bytes
             schema[:primitive] = 'NCLOB'
             # CLOB and NCLOB do not support length
@@ -191,7 +185,7 @@ module DataMapper
           serial     = model.serial(name)
 
           statements = []
-          if sequence_name = model_sequence_name(model)
+          if (sequence_name = model_sequence_name(model))
             sequence_name = quote_name(sequence_name)
             column_name   = quote_name(serial.field)
 
@@ -220,18 +214,17 @@ module DataMapper
 
         # @api private
         def drop_sequence_statement(model)
-          if sequence_name = model_sequence_name(model)
-            "DROP SEQUENCE #{quote_name(sequence_name)}"
-          else
-            nil
-          end
+          return unless (sequence_name = model_sequence_name(model))
+
+          "DROP SEQUENCE #{quote_name(sequence_name)}"
         end
 
         # @api private
         def reset_sequence_statement(model)
-          if sequence_name = model_sequence_name(model)
-            sequence_name = quote_name(sequence_name)
-            DataMapper::Ext::String.compress_lines(<<-SQL)
+          return unless (sequence_name = model_sequence_name(model))
+
+          sequence_name = quote_name(sequence_name)
+          DataMapper::Ext::String.compress_lines(<<-SQL)
             DECLARE
               cval   INTEGER;
             BEGIN
@@ -240,11 +233,7 @@ module DataMapper
               SELECT #{sequence_name}.NEXTVAL INTO cval FROM dual;
               EXECUTE IMMEDIATE 'ALTER SEQUENCE #{sequence_name} INCREMENT BY 1';
             END;
-            SQL
-          else
-            nil
-          end
-
+          SQL
         end
 
         # @api private
@@ -257,38 +246,31 @@ module DataMapper
           "DELETE FROM #{quote_name(model.storage_name(name))}"
         end
 
-        private
-
-        def model_sequence_name(model)
+        private def model_sequence_name(model)
           name       = self.name
           table_name = model.storage_name(name)
           serial     = model.serial(name)
 
-          if serial
-            serial.options[:sequence] || default_sequence_name(table_name)
-          else
-            nil
-          end
+          return unless serial
+
+          serial.options[:sequence] || default_sequence_name(table_name)
         end
 
-        def default_sequence_name(table_name)
+        private def default_sequence_name(table_name)
           # truncate table name if necessary to fit in max length of identifier
-          "#{table_name[0,self.class::IDENTIFIER_MAX_LENGTH-4]}_seq"
+          "#{table_name[0, self.class::IDENTIFIER_MAX_LENGTH - 4]}_seq"
         end
 
-        def default_trigger_name(table_name)
+        private def default_trigger_name(table_name)
           # truncate table name if necessary to fit in max length of identifier
-          "#{table_name[0,self.class::IDENTIFIER_MAX_LENGTH-4]}_pkt"
+          "#{table_name[0, self.class::IDENTIFIER_MAX_LENGTH - 4]}_pkt"
         end
 
         # @api private
-        def add_column_statement
+        private def add_column_statement
           'ADD'
         end
-
-      end # module SQL
-
-      include SQL
+      end
 
       module ClassMethods
         # Types for Oracle databases.
@@ -299,19 +281,19 @@ module DataMapper
         def type_map
           length    = Property::String.length
           precision = Property::Numeric.precision
-          scale     = Property::Decimal.scale
+          _scale = Property::Decimal.scale
 
           super.merge(
-            Integer        => { :primitive => 'NUMBER',   :precision => precision, :scale => 0   },
-            String         => { :primitive => 'VARCHAR2', :length => length                      },
-            Class          => { :primitive => 'VARCHAR2', :length => length                      },
-            BigDecimal     => { :primitive => 'NUMBER',   :precision => precision, :scale => nil },
-            Float          => { :primitive => 'BINARY_FLOAT',                                    },
-            DateTime       => { :primitive => 'DATE'                                             },
-            Date           => { :primitive => 'DATE'                                             },
-            Time           => { :primitive => 'DATE'                                             },
-            TrueClass      => { :primitive => 'NUMBER',  :precision => 1, :scale => 0            },
-            Property::Text => { :primitive => 'CLOB'                                             }
+            Integer => {primitive: 'NUMBER', precision: precision, scale: 0},
+            String => {primitive: 'VARCHAR2', length: length},
+            Class => {primitive: 'VARCHAR2', length: length},
+            BigDecimal => {primitive: 'NUMBER', precision: precision, scale: nil},
+            Float => {primitive: 'BINARY_FLOAT'},
+            DateTime => {primitive: 'DATE'},
+            Date => {primitive: 'DATE'},
+            Time => {primitive: 'DATE'},
+            TrueClass => {primitive: 'NUMBER', precision: 1, scale: 0},
+            Property::Text => {primitive: 'CLOB'}
           ).freeze
         end
 
@@ -320,32 +302,38 @@ module DataMapper
         # @param [Symbol] :truncate, :delete or :drop_and_create (or nil)
         #   do not specify parameter to return current value
         #
-        # @return [Symbol] current value of auto_migrate_with option (nil returned for :drop_and_create)
+        # @return [Mixed]
+        #   [Symbol] current value of auto_migrate_with option
+        #   (nil returned for :drop_and_create)
         #
         # @api semipublic
         def auto_migrate_with(value = :not_specified)
           return @auto_migrate_with if value == :not_specified
+
           value = nil if value == :drop_and_create
           raise ArgumentError unless [nil, :truncate, :delete].include?(value)
+
           @auto_migrate_with = value
         end
 
         # Set if sequences will or will not be reset during auto_migrate!
         #
-        # @param [TrueClass, FalseClass] reset sequences?
+        # @param [Mixed] value
+        #   reset sequences? TrueClass, FalseClass
         #   do not specify parameter to return current value
         #
-        # @return [Symbol] current value of auto_migrate_reset_sequences option (default value is true)
+        # @return [Mixed]
+        #   [Symbol] current value of auto_migrate_reset_sequences option
+        #   (default value is true)
         #
         # @api semipublic
         def auto_migrate_reset_sequences(value = :not_specified)
           return @auto_migrate_reset_sequences.nil? ? true : @auto_migrate_reset_sequences if value == :not_specified
           raise ArgumentError unless [true, false].include?(value)
+
           @auto_migrate_reset_sequences = value
         end
-
       end
-
     end
   end
 end

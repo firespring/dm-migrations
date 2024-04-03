@@ -2,7 +2,6 @@ require 'dm-migrations/sql/table'
 
 module SQL
   module Mysql
-
     def supports_schema_transactions?
       false
     end
@@ -31,7 +30,7 @@ module SQL
 
     def property_schema_statement(connection, schema)
       if supports_serial? && schema[:serial]
-        statement = "#{schema[:quote_column_name]} SERIAL PRIMARY KEY"
+        "#{schema[:quote_column_name]} SERIAL PRIMARY KEY"
       else
         super
       end
@@ -46,11 +45,11 @@ module SQL
       column_info = select("SHOW COLUMNS FROM #{table} LIKE ?", old_col).first
 
       column_options = {
-        :name      => column_info.field,
-        :primitive => column_info.type,
-        :serial    => column_info.extra == 'auto_increment',
-        :allow_nil => column_info.null == 'YES',
-        :default   => column_info.default,
+        name: column_info.field,
+        primitive: column_info.type,
+        serial: column_info.extra == 'auto_increment',
+        allow_nil: column_info.null == 'YES',
+        default: column_info.default
       }
 
       column = with_connection do |connection|
@@ -73,7 +72,10 @@ module SQL
 
     class Column
       def initialize(col_struct)
-        @name, @type, @default_value, @primary_key = col_struct.name, col_struct.type, col_struct.dflt_value, col_struct.pk
+        @name = col_struct.name
+        @type = col_struct.type
+        @default_value = col_struct.dflt_value
+        @primary_key = col_struct.pk
 
         @not_null = col_struct.notnull == 0
       end

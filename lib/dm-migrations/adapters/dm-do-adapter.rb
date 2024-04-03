@@ -2,9 +2,7 @@ require 'dm-migrations/auto_migration'
 
 module DataMapper
   module Migrations
-
     module DataObjectsAdapter
-
       # Returns whether the storage_name exists.
       #
       # @param [String] storage_name
@@ -30,7 +28,7 @@ module DataMapper
       #
       # @param [String] storage_name
       #   a String defining the name of a storage, for example a table name.
-      # @param [String] field
+      # @param [String] column_name
       #   a String defining the name of a field, for example a column name.
       #
       # @return [Boolean]
@@ -54,9 +52,7 @@ module DataMapper
         name       = self.name
         properties = model.properties_with_subclasses(name)
 
-        if success = create_model_storage(model)
-          return properties
-        end
+        return properties if create_model_storage(model)
 
         table_name = model.storage_name(name)
 
@@ -91,12 +87,12 @@ module DataMapper
         return false if properties.empty?
 
         with_connection do |connection|
-          statements = [ create_table_statement(connection, model, properties) ]
+          statements = [create_table_statement(connection, model, properties)]
           statements.concat(create_index_statements(model))
           statements.concat(create_unique_index_statements(model))
 
           statements.each do |statement|
-            command   = connection.create_command(statement)
+            command = connection.create_command(statement)
             command.execute_non_query
           end
         end
@@ -107,12 +103,13 @@ module DataMapper
       # @api semipublic
       def destroy_model_storage(model)
         return true unless supports_drop_table_if_exists? || storage_exists?(model.storage_name(name))
+
         execute(drop_table_statement(model))
         true
       end
 
-      module SQL #:nodoc:
-#        private  ## This cannot be private for current migrations
+      module SQL # :nodoc:
+        # private  ## This cannot be private for current migrations
 
         # Adapters that support AUTO INCREMENT fields for CREATE TABLE
         # statements should overwrite this to return true
@@ -139,13 +136,11 @@ module DataMapper
 
         # @api private
         def create_table_statement(connection, model, properties)
-          statement = DataMapper::Ext::String.compress_lines(<<-SQL)
+          DataMapper::Ext::String.compress_lines(<<-SQL)
             CREATE TABLE #{quote_name(model.storage_name(name))}
             (#{properties.map { |property| property_schema_statement(connection, property_schema_hash(property)) }.join(', ')},
-            PRIMARY KEY(#{ properties.key.map { |property| quote_name(property.field) }.join(', ')}))
+            PRIMARY KEY(#{properties.key.map { |property| quote_name(property.field) }.join(', ')}))
           SQL
-
-          statement
         end
 
         # @api private
@@ -160,8 +155,8 @@ module DataMapper
 
         # @api private
         def create_index_statements(model)
-          name       = self.name
-          table_name = model.storage_name(name)
+          name = self.name
+          model.storage_name(name)
 
           indexes(model).map do |index_name, fields|
             create_index_statement(model, index_name, fields)
@@ -182,8 +177,8 @@ module DataMapper
         def create_unique_index_statements(model)
           name           = self.name
           table_name     = model.storage_name(name)
-          key            = model.key(name).map { |property| property.field }
-          unique_indexes = unique_indexes(model).reject { |index_name, fields| fields == key }
+          key            = model.key(name).map(&:field)
+          unique_indexes = unique_indexes(model).reject { |_index_name, fields| fields == key }
 
           unique_indexes.map do |index_name, fields|
             DataMapper::Ext::String.compress_lines(<<-SQL)
@@ -198,11 +193,12 @@ module DataMapper
           dump_class = property.dump_class
           type_by_property_class = self.class.type_by_property_class(property.class)
 
-          schema = (type_by_property_class || self.class.type_map[dump_class]).merge(:name => property.field)
+          schema = (type_by_property_class || self.class.type_map[dump_class]).merge(name: property.field)
 
           schema_primitive = schema[:primitive]
 
-          if dump_class.equal?(String) && schema_primitive != 'TEXT' && schema_primitive != 'CLOB' && schema_primitive != 'NVARCHAR' && schema_primitive != 'BYTEA' && schema_primitive != 'VARBINARY'
+          if dump_class.equal?(String) && schema_primitive != 'TEXT' && schema_primitive != 'CLOB' && schema_primitive != 'NVARCHAR' &&
+             schema_primitive != 'BYTEA' && schema_primitive != 'VARBINARY'
             schema[:length] = property.length
           elsif dump_class.equal?(BigDecimal) || dump_class.equal?(Float)
             schema[:precision] = property.precision
@@ -232,7 +228,7 @@ module DataMapper
           length = schema[:length]
 
           if schema[:precision] && schema[:scale]
-            statement << "(#{[ :precision, :scale ].map { |key| connection.quote_value(schema[key]) }.join(', ')})"
+            statement << "(#{%i(precision scale).map { |key| connection.quote_value(schema[key]) }.join(', ')})"
           elsif length == 'max'
             statement << '(max)'
           elsif length
@@ -240,9 +236,7 @@ module DataMapper
           end
 
           default = schema[:default]
-          if default
-            statement << " DEFAULT #{connection.quote_value(default)}"
-          end
+          statement << " DEFAULT #{connection.quote_value(default)}" if default
 
           statement << ' NOT NULL' unless schema[:allow_nil]
 
@@ -263,7 +257,7 @@ module DataMapper
         def add_column_statement
           'ADD COLUMN'
         end
-      end # module SQL
+      end
 
       include SQL
 
@@ -279,18 +273,18 @@ module DataMapper
           scale     = Property::Decimal.scale
 
           {
-            Property::Binary => { :primitive => 'BLOB'                                              },
-            Object           => { :primitive => 'TEXT'                                              },
-            Integer          => { :primitive => 'INTEGER'                                           },
-            String           => { :primitive => 'VARCHAR', :length => length                        },
-            Class            => { :primitive => 'VARCHAR', :length => length                        },
-            BigDecimal       => { :primitive => 'DECIMAL', :precision => precision, :scale => scale },
-            Float            => { :primitive => 'FLOAT',   :precision => precision                  },
-            DateTime         => { :primitive => 'TIMESTAMP'                                         },
-            Date             => { :primitive => 'DATE'                                              },
-            Time             => { :primitive => 'TIMESTAMP'                                         },
-            TrueClass        => { :primitive => 'BOOLEAN'                                           },
-            Property::Text   => { :primitive => 'TEXT'                                              },
+            Property::Binary => {primitive: 'BLOB'},
+            Object => {primitive: 'TEXT'},
+            Integer => {primitive: 'INTEGER'},
+            String => {primitive: 'VARCHAR', length: length},
+            Class => {primitive: 'VARCHAR', length: length},
+            BigDecimal => {primitive: 'DECIMAL', precision: precision, scale: scale},
+            Float => {primitive: 'FLOAT', precision: precision},
+            DateTime => {primitive: 'TIMESTAMP'},
+            Date => {primitive: 'DATE'},
+            Time => {primitive: 'TIMESTAMP'},
+            TrueClass => {primitive: 'BOOLEAN'},
+            Property::Text => {primitive: 'TEXT'}
           }.freeze
         end
 
@@ -306,6 +300,5 @@ module DataMapper
         end
       end
     end
-
   end
 end

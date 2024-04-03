@@ -1,6 +1,5 @@
 module SQL
   module Postgres
-
     def supports_schema_transactions?
       true
     end
@@ -24,15 +23,13 @@ module SQL
         statement = "#{schema[:quote_column_name]} SERIAL PRIMARY KEY"
       else
         statement = super
-        if schema.has_key?(:sequence_name)
-          statement << " DEFAULT nextval('#{schema[:sequence_name]}') NOT NULL"
-        end
+        statement << " DEFAULT nextval('#{schema[:sequence_name]}') NOT NULL" if schema.key?(:sequence_name)
         statement
       end
       statement
     end
 
-    def table_options(opts)
+    def table_options(_opts)
       ''
     end
 
@@ -46,7 +43,9 @@ module SQL
 
     class Table < SQL::Table
       def initialize(adapter, table_name)
-        @adapter, @name = adapter, table_name
+        super()
+        @adapter = adapter
+        @name = table_name
         @columns = []
         adapter.query_table(table_name).each do |col_struct|
           @columns << SQL::Postgres::Column.new(col_struct)
@@ -60,14 +59,15 @@ module SQL
           "SELECT * FROM information_schema.table_constraints WHERE table_name='#{@name}' AND table_schema=current_schema()"
         ).each do |table_constraint|
           @adapter.select(
-            "SELECT * FROM information_schema.constraint_column_usage WHERE constraint_name='#{table_constraint.constraint_name}' AND table_schema=current_schema()"
+            "SELECT * FROM information_schema.constraint_column_usage WHERE constraint_name='#{table_constraint.constraint_name}' " \
+            'AND table_schema=current_schema()'
           ).each do |constrained_column|
             @columns.each do |column|
-              if column.name == constrained_column.column_name
-                case table_constraint.constraint_type
-                when "UNIQUE"       then column.unique = true
-                when "PRIMARY KEY"  then column.primary_key = true
-                end
+              next unless column.name == constrained_column.column_name
+
+              case table_constraint.constraint_type
+              when 'UNIQUE'       then column.unique = true
+              when 'PRIMARY KEY'  then column.primary_key = true
               end
             end
           end
@@ -77,9 +77,12 @@ module SQL
 
     class Column < SQL::Column
       def initialize(col_struct)
-        @name, @type, @default_value = col_struct.column_name, col_struct.data_type, col_struct.column_default
+        super()
+        @name = col_struct.column_name
+        @type = col_struct.data_type
+        @default_value = col_struct.column_default
 
-        @not_null = col_struct.is_nullable != "YES"
+        @not_null = col_struct.is_nullable != 'YES'
       end
     end
   end

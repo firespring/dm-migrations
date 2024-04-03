@@ -4,13 +4,12 @@ require 'dm-migrations/adapters/dm-do-adapter'
 module DataMapper
   module Migrations
     module MysqlAdapter
-
       DEFAULT_ENGINE        = 'InnoDB'.freeze
       DEFAULT_CHARACTER_SET = 'utf8'.freeze
       DEFAULT_COLLATION     = 'utf8_unicode_ci'.freeze
-      MAXIMUM_CHAR_LENGTH   = (2**16 - 1) / 4  # allow room for utf8mb4
+      MAXIMUM_CHAR_LENGTH   = ((2**16) - 1) / 4 # allow room for utf8mb4
 
-      include DataObjectsAdapter
+      include SQL, DataObjectsAdapter
 
       # @api private
       def self.included(base)
@@ -29,8 +28,8 @@ module DataMapper
         result ? result.field == field : false
       end
 
-      module SQL #:nodoc:
-#        private  ## This cannot be private for current migrations
+      module SQL # :nodoc:
+        # private  ## This cannot be private for current migrations
 
         # Allows for specification of the default storage engine to use when creating tables via
         # migrations.  Defaults to DEFAULT_ENGINE.
@@ -74,7 +73,7 @@ module DataMapper
               schema[:primitive] = integer_column_statement(min..max) if min && max
             end
           when String.singleton_class
-            if property.kind_of?(Property::Text)
+            if property.is_a?(Property::Text)
               schema[:primitive] = text_column_statement(property.length)
               schema.delete(:default)
             else
@@ -89,9 +88,7 @@ module DataMapper
         def property_schema_statement(connection, schema)
           statement = super
 
-          if supports_serial? && schema[:serial]
-            statement << ' AUTO_INCREMENT'
-          end
+          statement << ' AUTO_INCREMENT' if supports_serial? && schema[:serial]
 
           statement
         end
@@ -119,8 +116,6 @@ module DataMapper
           result ? result.value.freeze : nil
         end
 
-        private
-
         # Return SQL statement for the text column
         #
         # @param [Integer] length
@@ -130,11 +125,15 @@ module DataMapper
         #   the statement to create the text column
         #
         # @api private
-        def text_column_statement(length)
-          if    length < 2**8  then 'TINYTEXT'
-          elsif length < 2**16 then 'TEXT'
-          elsif length < 2**24 then 'MEDIUMTEXT'
-          elsif length < 2**32 then 'LONGTEXT'
+        private def text_column_statement(length)
+          if length < 2**8
+            'TINYTEXT'
+          elsif length < 2**16
+            'TEXT'
+          elsif length < 2**24
+            'MEDIUMTEXT'
+          elsif length < 2**32
+            'LONGTEXT'
 
           # http://www.postgresql.org/files/documentation/books/aw_pgsql/node90.html
           # Implies that PostgreSQL doesn't have a size limit on text
@@ -154,12 +153,8 @@ module DataMapper
         #   the statement to create the integer column
         #
         # @api private
-        def integer_column_statement(range)
-          '%s(%d)%s' % [
-            integer_column_type(range),
-            integer_display_size(range),
-            integer_statement_sign(range),
-          ]
+        private def integer_column_statement(range)
+          format('%s(%d)%s', integer_column_type(range), integer_display_size(range), integer_statement_sign(range))
         end
 
         # Return the integer column type
@@ -174,7 +169,7 @@ module DataMapper
         #   the column type
         #
         # @api private
-        def integer_column_type(range)
+        private def integer_column_type(range)
           if range.first < 0
             signed_integer_column_type(range)
           else
@@ -190,7 +185,7 @@ module DataMapper
         # @return [String]
         #
         # @api private
-        def signed_integer_column_type(range)
+        private def signed_integer_column_type(range)
           min = range.first
           max = range.last
 
@@ -200,11 +195,16 @@ module DataMapper
           mediumint = 2**23
           bigint    = 2**63
 
-          if    min >= -tinyint   && max < tinyint   then 'TINYINT'
-          elsif min >= -smallint  && max < smallint  then 'SMALLINT'
-          elsif min >= -mediumint && max < mediumint then 'MEDIUMINT'
-          elsif min >= -integer   && max < integer   then 'INT'
-          elsif min >= -bigint    && max < bigint    then 'BIGINT'
+          if min >= -tinyint && max < tinyint
+            'TINYINT'
+          elsif min >= -smallint && max < smallint
+            'SMALLINT'
+          elsif min >= -mediumint && max < mediumint
+            'MEDIUMINT'
+          elsif min >= -integer && max < integer
+            'INT'
+          elsif min >= -bigint && max < bigint
+            'BIGINT'
           else
             raise ArgumentError, "min #{min} and max #{max} exceeds supported range"
           end
@@ -218,14 +218,19 @@ module DataMapper
         # @return [String]
         #
         # @api private
-        def unsigned_integer_column_type(range)
+        private def unsigned_integer_column_type(range)
           max = range.last
 
-          if    max < 2**8  then 'TINYINT'
-          elsif max < 2**16 then 'SMALLINT'
-          elsif max < 2**24 then 'MEDIUMINT'
-          elsif max < 2**32 then 'INT'
-          elsif max < 2**64 then 'BIGINT'
+          if max < 2**8
+            'TINYINT'
+          elsif max < 2**16
+            'SMALLINT'
+          elsif max < 2**24
+            'MEDIUMINT'
+          elsif max < 2**32
+            'INT'
+          elsif max < 2**64
+            'BIGINT'
           else
             raise ArgumentError, "min #{range.first} and max #{max} exceeds supported range"
           end
@@ -245,8 +250,8 @@ module DataMapper
         #   the display size for the integer
         #
         # @api private
-        def integer_display_size(range)
-          [ range.first.to_s.length, range.last.to_s.length ].max
+        private def integer_display_size(range)
+          [range.first.to_s.length, range.last.to_s.length].max
         end
 
         # Return the integer sign statement
@@ -258,32 +263,30 @@ module DataMapper
         #   statement if unsigned, nil if signed
         #
         # @api private
-        def integer_statement_sign(range)
+        private def integer_statement_sign(range)
           ' UNSIGNED' unless range.first < 0
         end
 
         # @api private
-        def indexes(model)
+        private def indexes(model)
           filter_indexes(model, super)
         end
 
         # @api private
-        def unique_indexes(model)
+        private def unique_indexes(model)
           filter_indexes(model, super)
         end
 
-        # Filter out any indexes with an unindexable column in MySQL
+        # Filter out any indexes with a non index-able column in MySQL
         #
         # @api private
-        def filter_indexes(model, indexes)
+        private def filter_indexes(model, indexes)
           field_map = model.properties(name).field_map
-          indexes.select do |index_name, fields|
-            fields.all? { |field| !field_map[field].kind_of?(Property::Text) }
+          indexes.select do |_index_name, fields|
+            fields.all? { |field| !field_map[field].is_a?(Property::Text) }
           end
         end
-      end # module SQL
-
-      include SQL
+      end
 
       module ClassMethods
         # Types for MySQL databases.
@@ -293,12 +296,11 @@ module DataMapper
         # @api private
         def type_map
           super.merge(
-            DateTime => { :primitive => 'DATETIME' },
-            Time     => { :primitive => 'DATETIME' }
+            DateTime => {primitive: 'DATETIME'},
+            Time => {primitive: 'DATETIME'}
           ).freeze
         end
       end
-
     end
   end
 end

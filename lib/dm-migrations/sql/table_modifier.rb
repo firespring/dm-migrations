@@ -7,11 +7,11 @@ module SQL
     def initialize(adapter, table_name, opts = {}, &block)
       @adapter = adapter
       @table_name = table_name.to_s
-      @opts = (opts)
+      @opts = opts
 
       @statements = []
 
-      self.instance_eval &block
+      instance_eval(&block)
     end
 
     def add_column(name, type, opts = {})
@@ -25,14 +25,14 @@ module SQL
       # TODO instead of building the SQL queries when executing the block, create AddColumn,
       # AlterColumn and DropColumn objects that get #to_sql'd
       if name.is_a?(Array)
-        name.each{ |n| drop_column(n) }
+        name.each { |n| drop_column(n) }
       else
         @statements << "ALTER TABLE #{quoted_table_name} DROP COLUMN #{quote_column_name(name)}"
       end
     end
     alias_method :drop_columns, :drop_column
 
-    def rename_column(name, new_name, opts = {})
+    def rename_column(name, new_name, _opts = {})
       # raise NotImplemented for SQLite3
       @statements << @adapter.rename_column_type_statement(table_name, name, new_name)
     end
