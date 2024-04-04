@@ -4,10 +4,11 @@ Gem::Specification.new do |gem|
   gem.authors       = ['Dan Kubb']
   gem.email         = ['dan.kubb@gmail.com']
   gem.summary       = 'DataMapper plugin for writing and spec-ing migrations'
-  gem.description   = gem.summary
+  gem.description   = 'DataMapper plugin for modifying and maintaining database structure, triggers, stored procedures, and data'
   gem.homepage      = 'https://datamapper.org'
+  gem.license = 'Nonstandard'
 
-  gem.files         = `git ls-files`.split("\n")
+  gem.files = `git ls-files`.split("\n")
   gem.extra_rdoc_files = %w(LICENSE README.rdoc)
 
   gem.name          = 'dm-migrations'
