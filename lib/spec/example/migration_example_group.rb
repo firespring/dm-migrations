@@ -8,23 +8,19 @@ module Spec
       include Spec::Matchers::Migration
 
       before(:all) do
-        if this_migration.adapter.supports_schema_transactions?
-          run_prereq_migrations
-        end
+        run_prereq_migrations if this_migration.adapter.supports_schema_transactions?
       end
 
       before(:each) do
-        if ! this_migration.adapter.supports_schema_transactions?
-          run_prereq_migrations
-        else
+        if this_migration.adapter.supports_schema_transactions?
           this_migration.adapter.begin_transaction
+        else
+          run_prereq_migrations
         end
       end
 
       after(:each) do
-        if this_migration.adapter.supports_schema_transactions?
-          this_migration.adapter.rollback_transaction
-        end
+        this_migration.adapter.rollback_transaction if this_migration.adapter.supports_schema_transactions?
       end
 
       after(:all) do
@@ -32,12 +28,13 @@ module Spec
       end
 
       def run_prereq_migrations
-        "running n-1 migrations"
+        # 'running n-1 migrations'
         all_databases.each do |db|
           db.adapter.recreate_database
         end
         @@migrations.sort.each do |migration|
           break if migration.name.to_s == migration_name.to_s
+
           migration.perform_up
         end
       end
@@ -47,11 +44,11 @@ module Spec
       end
 
       def migration_name
-        @migration_name ||= self.class.instance_variable_get("@description_text").to_s
+        @migration_name ||= self.class.instance_variable_get('@description_text').to_s
       end
 
       def all_databases
-        @@migrations.map { |m| m.database }.uniq
+        @@migrations.map(&:database).uniq
       end
 
       def this_migration
@@ -67,7 +64,6 @@ module Spec
       end
 
       Spec::Example::ExampleGroupFactory.register(:migration, self)
-
     end
   end
 end

@@ -4,10 +4,9 @@ require 'dm-migrations/adapters/dm-do-adapter'
 module DataMapper
   module Migrations
     module SqlserverAdapter
-
       DEFAULT_CHARACTER_SET = 'utf8'.freeze
 
-      include DataObjectsAdapter
+      include SQL, DataObjectsAdapter
 
       # @api private
       def self.included(base)
@@ -17,17 +16,21 @@ module DataMapper
 
       # @api semipublic
       def storage_exists?(storage_name)
-        select("SELECT name FROM sysobjects WHERE name LIKE ?", storage_name).first == storage_name
+        select('SELECT name FROM sysobjects WHERE name LIKE ?', storage_name).first == storage_name
       end
 
       # @api semipublic
       def field_exists?(storage_name, field_name)
-        result = select("SELECT c.name FROM sysobjects as o JOIN syscolumns AS c ON o.id = c.id WHERE o.name = ? AND c.name LIKE ?", storage_name, field_name).first
+        result = select(
+          'SELECT c.name FROM sysobjects as o JOIN syscolumns AS c ON o.id = c.id WHERE o.name = ? AND c.name LIKE ?',
+          storage_name,
+          field_name
+        ).first
         result ? result.to_s == field_name.to_s : false
       end
 
-      module SQL #:nodoc:
-#        private  ## This cannot be private for current migrations
+      module SQL # :nodoc:
+        # private  ## This cannot be private for current migrations
 
         # @api private
         def supports_serial?
@@ -40,7 +43,7 @@ module DataMapper
         end
 
         # @api private
-        def schema_name          
+        def schema_name
           select('SELECT DB_NAME()')
         end
 
@@ -55,9 +58,9 @@ module DataMapper
             (#{properties.map { |property| property_schema_statement(connection, property_schema_hash(property)) }.join(', ')}
           SQL
 
-            # specific the primary keys.
-            # don't have to filter out Serial (aka IDENTITY) type
-            statement << ", PRIMARY KEY(#{properties.key.map { |property| quote_name(property.field) }.join(', ')})"
+          # specific the primary keys.
+          # don't have to filter out Serial (aka IDENTITY) type
+          statement << ", PRIMARY KEY(#{properties.key.map { |property| quote_name(property.field) }.join(', ')})"
 
           statement << ')'
           statement
@@ -67,7 +70,7 @@ module DataMapper
         def property_schema_hash(property)
           schema = super
 
-          if property.kind_of?(Property::Integer)
+          if property.is_a?(Property::Integer)
             min = property.min
             max = property.max
 
@@ -75,18 +78,16 @@ module DataMapper
           end
 
           schema_primitive = schema[:primitive]
-          
+
           if schema_primitive == 'NVARCHAR'
-            if property.length <= 4000
-              schema[:length] = property.length
-            else
-              schema[:length] = 'max'
-            end
+            schema[:length] = if property.length <= 4000
+                                property.length
+                              else
+                                'max'
+                              end
           end
 
-          if schema[:primitive] == 'TEXT'
-            schema.delete(:default)
-          end
+          schema.delete(:default) if schema[:primitive] == 'TEXT'
 
           schema
         end
@@ -100,7 +101,7 @@ module DataMapper
             length = schema[:length]
 
             if schema[:precision] && schema[:scale]
-              statement << "(#{[ :precision, :scale ].map { |key| connection.quote_value(schema[key]) }.join(', ')})"
+              statement << "(#{%i(precision scale).map { |key| connection.quote_value(schema[key]) }.join(', ')})"
             elsif length
               statement << "(#{connection.quote_value(length)})"
             end
@@ -124,11 +125,9 @@ module DataMapper
         end
 
         # @api private
-        def show_variable(name)
-          raise "SqlserverAdapter#show_variable: Not implemented"
+        def show_variable(_name)
+          raise 'SqlserverAdapter#show_variable: Not implemented'
         end
-
-        private
 
         # Return SQL statement for the integer column
         #
@@ -139,7 +138,7 @@ module DataMapper
         #   the statement to create the integer column
         #
         # @api private
-        def integer_column_statement(range)
+        private def integer_column_statement(range)
           min = range.first
           max = range.last
 
@@ -147,7 +146,8 @@ module DataMapper
           integer  = 2**31
           bigint   = 2**63
 
-          if    min >= 0         && max < 2**8     then 'TINYINT'
+          if min >= 0 && max < 2**8
+            'TINYINT'
           elsif min >= -smallint && max < smallint then 'SMALLINT'
           elsif min >= -integer  && max < integer  then 'INT'
           elsif min >= -bigint   && max < bigint   then 'BIGINT'
@@ -155,10 +155,7 @@ module DataMapper
             raise ArgumentError, "min #{min} and max #{max} exceeds supported range"
           end
         end
-
-      end # module SQL
-
-      include SQL
+      end
 
       module ClassMethods
         # Types for Sqlserver databases.
@@ -167,22 +164,21 @@ module DataMapper
         #
         # @api private
         def type_map
-          length    = Property::String.length
-          precision = Property::Numeric.precision
-          scale     = Property::Decimal.scale
+          length = Property::String.length
+          _precision = Property::Numeric.precision
+          _scale     = Property::Decimal.scale
 
           super.merge(
-            DateTime       => { :primitive => 'DATETIME'                      },
-            Date           => { :primitive => 'SMALLDATETIME'                 },
-            Time           => { :primitive => 'SMALLDATETIME'                 },
-            TrueClass      => { :primitive => 'BIT',                          },
-            String           => { :primitive => 'NVARCHAR', :length => length },
-            Property::Text => { :primitive => 'NVARCHAR', :length => 'max'    },
-            Property::Binary => { :primitive => 'VARBINARY', :length => 'max' } 
+            DateTime => {primitive: 'DATETIME'},
+            Date => {primitive: 'SMALLDATETIME'},
+            Time => {primitive: 'SMALLDATETIME'},
+            TrueClass => {primitive: 'BIT'},
+            String => {primitive: 'NVARCHAR', length: length},
+            Property::Text => {primitive: 'NVARCHAR', length: 'max'},
+            Property::Binary => {primitive: 'VARBINARY', length: 'max'}
           ).freeze
         end
       end
-
     end
   end
 end

@@ -1,15 +1,15 @@
 require 'dm-migrations/migration_runner'
 
-DataMapper.setup(:default, "sqlite3::memory")
+DataMapper.setup(:default, 'sqlite3::memory')
 
 DataMapper::Logger.new(STDOUT, :debug)
-DataMapper.logger.debug( "Starting Migration" )
+DataMapper.logger.debug( 'Starting Migration' )
 
 migration 1, :create_people_table do
   up do
     create_table :people do
-      column :id,   Integer, :serial => true
-      column :name, String, :size => 50
+      column :id,   Integer, serial: true
+      column :name, String, size: 50
       column :age,  Integer
     end
   end
@@ -21,7 +21,7 @@ end
 migration 2, :add_dob_to_people do
   up do
     modify_table :people do
-      add_column :dob, DateTime, :allow_nil => true
+      add_column :dob, DateTime, allow_nil: true
     end
   end
 
@@ -50,7 +50,7 @@ end
 # puts Person.all.inspect
 
 if $0 == __FILE__
-  if $*.first == "down"
+  if $*.first == 'down'
     migrate_down!
   else
     migrate_up!

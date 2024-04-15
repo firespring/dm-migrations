@@ -4,7 +4,6 @@ require 'fileutils'
 
 module SQL
   module Sqlite
-
     def supports_schema_transactions?
       true
     end
@@ -19,7 +18,7 @@ module SQL
       # do nothing, sqlite will automatically create the database file
     end
 
-    def table_options(opts)
+    def table_options(_opts)
       ''
     end
 
@@ -37,6 +36,7 @@ module SQL
 
     class Table < SQL::Table
       def initialize(adapter, table_name)
+        super()
         @columns = []
         adapter.table_info(table_name).each do |col_struct|
           @columns << SQL::Sqlite::Column.new(col_struct)
@@ -46,7 +46,11 @@ module SQL
 
     class Column < SQL::Column
       def initialize(col_struct)
-        @name, @type, @default_value, @primary_key = col_struct.name, col_struct.type, col_struct.dflt_value, col_struct.pk
+        super()
+        @name = col_struct.name
+        @type = col_struct.type
+        @default_value = col_struct.dflt_value
+        @primary_key = col_struct.pk
 
         @not_null = col_struct.notnull == 0
       end

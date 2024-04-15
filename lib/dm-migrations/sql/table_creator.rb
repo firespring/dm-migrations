@@ -2,7 +2,6 @@ require 'dm-core'
 
 module SQL
   class TableCreator
-
     extend DataMapper::Property::Lookup
 
     attr_accessor :table_name, :opts
@@ -14,7 +13,7 @@ module SQL
 
       @columns = []
 
-      self.instance_eval &block
+      instance_eval(&block)
     end
 
     def quoted_table_name
@@ -26,7 +25,7 @@ module SQL
     end
 
     def to_sql
-      "CREATE TABLE #{quoted_table_name} (#{@columns.map{ |c| c.to_sql }.join(', ')})#{@adapter.table_options(@opts)}"
+      "CREATE TABLE #{quoted_table_name} (#{@columns.map(&:to_sql).join(', ')})#{@adapter.table_options(@opts)}"
     end
 
     # A helper for using the native NOW() SQL function in a default
@@ -41,6 +40,7 @@ module SQL
 
     class SqlExpr
       attr_accessor :sql
+
       def initialize(sql)
         @sql = sql
       end
@@ -64,22 +64,19 @@ module SQL
         type
       end
 
-      private
+      private def build_type(type_class)
+        schema = {name: @name, quote_column_name: quoted_name}
 
-      def build_type(type_class)
-        schema = { :name => @name, :quote_column_name => quoted_name }
-
-        [ :nullable, :nullable? ].each do |option|
+        %i(nullable nullable?).each do |option|
           next if (value = schema.delete(option)).nil?
+
           warn "#{option.inspect} is deprecated, use :allow_nil instead"
           schema[:allow_nil] = value unless schema.key?(:allow_nil)
         end
 
-        unless schema.key?(:allow_nil)
-          schema[:allow_nil] = !schema[:not_null]
-        end
+        schema[:allow_nil] = !schema[:not_null] unless schema.key?(:allow_nil)
 
-        if type_class.kind_of?(String)
+        if type_class.is_a?(String)
           schema[:primitive] = type_class
         else
           primitive = type_class.respond_to?(:dump_as) ? type_class.dump_as : type_class
@@ -100,7 +97,7 @@ module SQL
         end
       end
 
-      def quoted_name
+      private def quoted_name
         @adapter.send(:quote_name, name)
       end
     end

@@ -4,8 +4,7 @@ require 'dm-migrations/adapters/dm-do-adapter'
 module DataMapper
   module Migrations
     module SqliteAdapter
-
-      include DataObjectsAdapter
+      include SQL, DataObjectsAdapter
 
       # @api private
       def self.included(base)
@@ -25,8 +24,8 @@ module DataMapper
         end
       end
 
-      module SQL #:nodoc:
-#        private  ## This cannot be private for current migrations
+      module SQL # :nodoc:
+        # private  ## This cannot be private for current migrations
 
         # @api private
         def supports_serial?
@@ -53,9 +52,7 @@ module DataMapper
           # skip adding the primary key if one of the columns is serial.  In
           # SQLite the serial column must be the primary key, so it has already
           # been defined
-          unless properties.any? { |property| property.serial? }
-            statement << ", PRIMARY KEY(#{properties.key.map { |property| quote_name(property.field) }.join(', ')})"
-          end
+          statement << ", PRIMARY KEY(#{properties.key.map { |property| quote_name(property.field) }.join(', ')})" unless properties.any?(&:serial?)
 
           statement << ')'
           statement
@@ -65,9 +62,7 @@ module DataMapper
         def property_schema_statement(connection, schema)
           statement = super
 
-          if supports_serial? && schema[:serial]
-            statement << ' PRIMARY KEY AUTOINCREMENT'
-          end
+          statement << ' PRIMARY KEY AUTOINCREMENT' if supports_serial? && schema[:serial]
 
           statement
         end
@@ -76,9 +71,7 @@ module DataMapper
         def sqlite_version
           @sqlite_version ||= select('SELECT sqlite_version(*)').first.freeze
         end
-      end # module SQL
-
-      include SQL
+      end
 
       module ClassMethods
         # Types for SQLite 3 databases.
@@ -87,10 +80,9 @@ module DataMapper
         #
         # @api private
         def type_map
-          super.merge(Class => { :primitive => 'VARCHAR' }).freeze
+          super.merge(Class => {primitive: 'VARCHAR'}).freeze
         end
       end
-
     end
   end
 end

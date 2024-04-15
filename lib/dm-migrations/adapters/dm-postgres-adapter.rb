@@ -4,8 +4,7 @@ require 'dm-migrations/adapters/dm-do-adapter'
 module DataMapper
   module Migrations
     module PostgresAdapter
-
-      include DataObjectsAdapter
+      include SQL, DataObjectsAdapter
 
       # @api private
       def self.included(base)
@@ -32,8 +31,8 @@ module DataMapper
         end
       end
 
-      module SQL #:nodoc:
-#        private  ## This cannot be private for current migrations
+      module SQL # :nodoc:
+        # private  ## This cannot be private for current migrations
 
         # @api private
         def supports_drop_table_if_exists?
@@ -53,12 +52,10 @@ module DataMapper
         # @api private
         def without_notices
           # execute the block with NOTICE messages disabled
-          begin
-            execute('SET client_min_messages = warning')
-            yield
-          ensure
-            execute('RESET client_min_messages')
-          end
+          execute('SET client_min_messages = warning')
+          yield
+        ensure
+          execute('RESET client_min_messages')
         end
 
         # @api private
@@ -66,26 +63,22 @@ module DataMapper
           schema = super
 
           # Postgres does not support precision and scale for Float
-          if property.kind_of?(Property::Float)
+          if property.is_a?(Property::Float)
             schema.delete(:precision)
             schema.delete(:scale)
           end
 
-          if property.kind_of?(Property::Integer)
+          if property.is_a?(Property::Integer)
             min = property.min
             max = property.max
 
             schema[:primitive] = integer_column_statement(min..max) if min && max
           end
 
-          if schema[:serial]
-            schema[:primitive] = serial_column_statement(min..max)
-          end
+          schema[:primitive] = serial_column_statement(min..max) if schema[:serial]
 
           schema
         end
-
-        private
 
         # Return SQL statement for the integer column
         #
@@ -96,7 +89,7 @@ module DataMapper
         #   the statement to create the integer column
         #
         # @api private
-        def integer_column_statement(range)
+        private def integer_column_statement(range)
           min = range.first
           max = range.last
 
@@ -104,9 +97,12 @@ module DataMapper
           integer  = 2**31
           bigint   = 2**63
 
-          if    min >= -smallint && max < smallint then 'SMALLINT'
-          elsif min >= -integer  && max < integer  then 'INTEGER'
-          elsif min >= -bigint   && max < bigint   then 'BIGINT'
+          if min >= -smallint && max < smallint
+            'SMALLINT'
+          elsif min >= -integer  && max < integer
+            'INTEGER'
+          elsif min >= -bigint   && max < bigint
+            'BIGINT'
           else
             raise ArgumentError, "min #{min} and max #{max} exceeds supported range"
           end
@@ -114,25 +110,25 @@ module DataMapper
 
         # Return SQL statement for the serial column
         #
-        # @param [Integer] max
-        #   the max allowed integer
+        # @param [Range] range
+        #   the range of allowed integers
         #
         # @return [String]
         #   the statement to create the serial column
         #
         # @api private
-        def serial_column_statement(range)
+        private def serial_column_statement(range)
           max = range.last
 
-          if    max.nil? || max < 2**31 then 'SERIAL'
-          elsif             max < 2**63 then 'BIGSERIAL'
+          if max.nil? || max < 2**31
+            'SERIAL'
+          elsif max < 2**63
+            'BIGSERIAL'
           else
             raise ArgumentError, "min #{range.first} and max #{max} exceeds supported range"
           end
         end
-      end # module SQL
-
-      include SQL
+      end
 
       module ClassMethods
         # Types for PostgreSQL databases.
@@ -145,13 +141,12 @@ module DataMapper
           scale     = Property::Decimal.scale
 
           super.merge(
-            Property::Binary => { :primitive => 'BYTEA'                                                      },
-            BigDecimal       => { :primitive => 'NUMERIC',          :precision => precision, :scale => scale },
-            Float            => { :primitive => 'DOUBLE PRECISION'                                           }
+            Property::Binary => {primitive: 'BYTEA'},
+            BigDecimal => {primitive: 'NUMERIC', precision: precision, scale: scale},
+            Float => {primitive: 'DOUBLE PRECISION'}
           ).freeze
         end
       end
-
     end
   end
 end

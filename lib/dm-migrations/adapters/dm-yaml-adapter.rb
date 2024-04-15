@@ -4,10 +4,9 @@ require 'dm-migrations/adapters/dm-do-adapter'
 module DataMapper
   module Migrations
     module YamlAdapter
-
-      def self.included(base)
+      def self.included(_base)
         DataMapper.extend(Migrations::SingletonMethods)
-        [ :Repository, :Model ].each do |name|
+        %i(Repository Model).each do |name|
           DataMapper.const_get(name).send(:include, Migrations.const_get(name))
         end
       end
@@ -17,7 +16,6 @@ module DataMapper
         yaml_file(model).unlink if yaml_file(model).file?
         true
       end
-
     end
   end
 end
