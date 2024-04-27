@@ -10,8 +10,9 @@ CURRENT_BRANCH = ENV.fetch('GIT_BRANCH', 'master')
 gem 'dm-core', DM_VERSION, github: 'firespring/dm-core', branch: CURRENT_BRANCH
 
 group :development do
-  gem 'rake'
-  gem 'rspec'
+  gem 'rake', '~> 13.1'
+  gem 'rake-compiler', '~> 1.2'
+  gem 'rspec', '~> 3.13'
 end
 
 group :datamapper do

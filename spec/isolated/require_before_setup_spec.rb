@@ -1,6 +1,6 @@
-require 'spec'
+require 'rspec'
 
-require 'isolated/require_spec'
+require_relative 'require_spec'
 require 'dm-core/spec/setup'
 
 # To really test this behavior, this spec needs to be run in isolation and not
@@ -11,7 +11,6 @@ class ::Person
 end
 
 if %w(postgres mysql sqlite oracle sqlserver).include?(ENV['ADAPTER'])
-
   describe "require 'dm-migrations' before calling DataMapper.setup" do
     before(:all) do
       require 'dm-migrations'

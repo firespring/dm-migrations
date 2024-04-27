@@ -1,6 +1,6 @@
 require 'spec/matchers/migration_matchers'
 
-require 'spec'
+require 'rspec'
 
 module Spec
   module Example

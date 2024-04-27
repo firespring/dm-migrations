@@ -1,9 +1,9 @@
-require 'spec_helper'
+require_relative '../spec_helper'
 
 require 'dm-migrations/auto_migration'
 
 module DataMapper
-  module Property
+  class Property
     class NumericString < DataMapper::Property::String
       default 0
 
