@@ -15,49 +15,49 @@ describe 'SQL module' do
     end
 
     describe 'initialization' do
-      it 'should set @adapter to the adapter' do
+      it 'sets @adapter to the adapter' do
         expect(tc.instance_variable_get("@adapter")).to eq adapter
       end
 
-      it 'should set @table_name to the stringified table name' do
+      it 'sets @table_name to the stringified table name' do
         expect(tc.instance_variable_get("@table_name")).to eq table_name.to_s
       end
 
-      it 'should set @opts to the options hash' do
+      it 'sets @opts to the options hash' do
         expect(tc.instance_variable_get("@opts")).to eq opts
       end
 
-      it 'should set @columns to an empty array' do
+      it 'sets @columns to an empty array' do
         expect(tc.instance_variable_get("@columns")).to eq []
       end
 
       context 'receives a block' do
         let(:block) { proc { column :foo, :bar } }
         let(:col) { double('column') }
-        it 'should evaluate the given block' do
+        it 'evaluates the given block' do
           expect(SQL::TableCreator::Column).to receive(:new).with(adapter, :foo, :bar, {}).and_return(col)
           expect(tc.instance_variable_get("@columns")).to eq [col]
         end
       end
     end
 
-    it 'should have a table_name' do
+    it 'has a table_name' do
       expect(tc).to respond_to(:table_name)
       expect(tc.table_name).to eq table_name.to_s
     end
 
-    it 'should use the adapter to quote the table name' do
+    it 'uses the adapter to quote the table name' do
       expect(adapter).to receive(:quote_name).with('users').and_return(%{'users'})
       expect(tc.quoted_table_name).to eq %{'users'}
     end
 
-    it 'should initialize a new column and add it to the list of columns' do
+    it 'initializes a new column and add it to the list of columns' do
       expect(SQL::TableCreator::Column).to receive(:new).with(adapter, :foo, :bar, {}).and_return(col)
       tc.column(:foo, :bar)
       expect(tc.instance_variable_get("@columns")).to eq [col]
     end
 
-    it 'should output an SQL CREATE statement to build itself' do
+    it 'outputs an SQL CREATE statement to build itself' do
       allow(adapter).to receive(:table_options).and_return('')
       expect(tc.to_sql).to eq %{CREATE TABLE 'users' ()}
     end
@@ -75,20 +75,20 @@ describe 'SQL module' do
       end
 
       describe 'initialization' do
-        it 'should set @adapter to the adapter' do
+        it 'sets @adapter to the adapter' do
           expect(c.instance_variable_get("@adapter")).to eq adapter
         end
 
-        it 'should set @name to the stringified name' do
+        it 'sets @name to the stringified name' do
           expect(c.instance_variable_get("@name")).to eq 'id'
         end
 
         # TODO make this really the type, not this sql bullshit
-        it 'should set @type to the type' do
+        it 'sets @type to the type' do
           expect(c.instance_variable_get("@type")).to eq 'SOME SQL'
         end
 
-        it 'should set @opts to the options hash' do
+        it 'sets @opts to the options hash' do
           expect(c.instance_variable_get("@opts")).to eq opts
         end
       end

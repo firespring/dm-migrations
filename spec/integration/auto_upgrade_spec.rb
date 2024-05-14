@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../spec_helper'
 
 require 'dm-migrations/auto_migration'
 
@@ -30,11 +30,11 @@ describe DataMapper::Migrations do
     end
 
     describe '#auto_upgrade' do
-      it 'should create an index' do
+      it 'creates an index' do
         @model.auto_migrate!
         @property = @model.property(:name, String, index: true)
         @response = capture_log(DataObjects::Postgres) { @model.auto_upgrade! }
-        @output[-2].should == 'CREATE INDEX "index_blog_articles_name" ON "blog_articles" ("name")'
+        expect(@output[-2]).to eq 'CREATE INDEX "index_blog_articles_name" ON "blog_articles" ("name")'
       end
     end
   end

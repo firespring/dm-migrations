@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../spec_helper'
 
 describe 'Migration' do
 
@@ -18,92 +18,92 @@ describe 'Migration' do
       end
     end
 
-    it 'shoud send the method to all models by default' do
+    it 'sends the method to all models by default' do
       DataMapper.finalize
-      DefaultKlass.should_receive(:auto_migrate!).with(:default)
-      ContextKlass.should_receive(:auto_migrate!).with(:not_default_repository)
+      expect(DefaultKlass).to receive(:auto_migrate!).with(:default)
+      expect(ContextKlass).to receive(:auto_migrate!).with(:not_default_repository)
       DataMapper.auto_migrate!
     end
 
-    it 'should send the method to only repository models if a repository_name is given' do
+    it 'sends the method to only repository models if a repository_name is given' do
       DataMapper.finalize
-      DefaultKlass.should_not_receive(:auto_migrate!)
-      ContextKlass.should_receive(:auto_migrate!).with(:not_default_repository)
+      expect(DefaultKlass).not_to receive(:auto_migrate!)
+      expect(ContextKlass).not_to receive(:auto_migrate!).with(:not_default_repository)
       DataMapper.auto_migrate!(:not_default_repository)
     end
   end
 
   supported_by :postgres, :mysql, :sqlite do
     before do
-      @adapter = mock('adapter', :class => DataMapper::Spec.adapter.class)
-      @repo = mock('DataMapper.repository', :adapter => @adapter)
+      @adapter = double('adapter', :class => DataMapper::Spec.adapter.class)
+      @repo = double('DataMapper.repository', :adapter => @adapter)
       DataMapper.stub!(:repository).and_return(@repo)
       @m = DataMapper::Migration.new(1, :do_nothing, {}) {}
       @m.stub!(:write) # silence any output
     end
 
     [:position, :name, :database, :adapter].each do |meth|
-      it "should respond to ##{meth}" do
-        @m.should respond_to(meth)
+      it "responds to ##{meth}" do
+        expect(@m).to respond_to(meth)
       end
     end
 
     describe 'initialization' do
-      it 'should set @position from the given position' do
-        @m.instance_variable_get(:@position).should == 1
+      it 'sets @position from the given position' do
+        expect(@m.instance_variable_get(:@position)).to eq 1
       end
 
-      it 'should set @name from the given name' do
-        @m.instance_variable_get(:@name).should == :do_nothing
+      it 'sets @name from the given name' do
+        expect(@m.instance_variable_get(:@name)).to eq :do_nothing
       end
 
-      it 'should set @options from the options hash' do
-        @m.instance_variable_get(:@options).should == {}
+      it 'sets @options from the options hash' do
+        expect(@m.instance_variable_get(:@options)).to eq({})
       end
 
-      it 'should set @repository from the default repository if no :repository option is given' do
+      it 'sets @repository from the default repository if no :repository option is given' do
         m = DataMapper::Migration.new(1, :do_nothing, {}) {}
 
-        m.instance_variable_get(:@repository).should == :default
+        expect(m.instance_variable_get(:@repository)).to eq :default
       end
 
-      it 'should set @repository to the specified :repository option' do
+      it 'sets @repository to the specified :repository option' do
         m = DataMapper::Migration.new(1, :do_nothing, :repository => :foobar) {}
 
-        m.instance_variable_get(:@repository).should == :foobar
+        expect(m.instance_variable_get(:@repository)).to eq :foobar
       end
 
-      it 'should set @verbose from the options hash' do
+      it 'sets @verbose from the options hash' do
         m = DataMapper::Migration.new(1, :do_nothing, :verbose => false) {}
-        m.instance_variable_get(:@verbose).should be(false)
+        expect(m.instance_variable_get(:@verbose)).to be(false)
       end
 
-      it 'should set @verbose to true by default' do
-        @m.instance_variable_get(:@verbose).should be(true)
+      it 'sets @verbose to true by default' do
+        expect(@m.instance_variable_get(:@verbose)).to be(true)
       end
 
-      it 'should set the @up_action to nil' do
-        @m.instance_variable_get(:@up_action).should be_nil
+      it 'sets the @up_action to nil' do
+        expect(@m.instance_variable_get(:@up_action)).to be_nil
       end
 
-      it 'should set the @down_action to nil' do
-        @m.instance_variable_get(:@down_action).should be_nil
+      it 'sets the @down_action to nil' do
+        expect(@m.instance_variable_get(:@down_action)).to be_nil
       end
 
-      it 'should evaluate the given block'
+      it 'evaluates the given block'
 
     end
 
-    it 'should set the @up_action when #up is called with a block' do
+    it 'sets the @up_action when #up is called with a block' do
       action = lambda {}
       @m.up(&action)
-      @m.instance_variable_get(:@up_action).should == action
+      expect(@m.instance_variable_get(:@up_action)).to eq action
     end
 
-    it 'should set the @up_action when #up is called with a block' do
+    it 'sets the @up_action when #up is called with a block' do
       action = lambda {}
       @m.down(&action)
-      @m.instance_variable_get(:@down_action).should == action
+      expect(@m.instance_variable_get(:@down_action)).to eq action
     end
 
     describe 'adapter' do
@@ -111,22 +111,22 @@ describe 'Migration' do
         @m.instance_variable_set(:@adapter, nil)
       end
 
-      it 'should determine the class of the adapter to be extended' do
-        @adapter.should_receive(:class).and_return(DataMapper::Spec.adapter.class)
+      it 'determines the class of the adapter to be extended' do
+        expect(@adapter).to receive(:class).and_return(DataMapper::Spec.adapter.class)
 
         @m.adapter
       end
 
-      it 'should extend the adapter with the right module' do
-        @adapter.should_receive(:extend).with(SQL.const_get(DataMapper::Spec.adapter_name.capitalize))
+      it 'extends the adapter with the right module' do
+        expect(@adapter).to receive(:extend).with(SQL.const_get(DataMapper::Spec.adapter_name.capitalize))
 
         @m.adapter
       end
 
-      it 'should raise "Unsupported adapter" on an unknown adapter' do
-        @adapter.should_receive(:class).any_number_of_times.and_return("InvalidAdapter")
+      it 'raises "Unsupported adapter" on an unknown adapter' do
+        expect(@adapter).to receive(:class).any_number_of_times.and_return("InvalidAdapter")
 
-        lambda { @m.adapter }.should raise_error
+        expect { @m.adapter }.to raise_error
       end
     end
 
@@ -138,30 +138,30 @@ describe 'Migration' do
         @m.stub!(:update_migration_info)
       end
 
-      it 'should call the action assigned to @up_action and return the result' do
-        @up_action.should_receive(:call).and_return(:result)
-        @m.perform_up.should == :result
+      it 'calls the action assigned to @up_action and return the result' do
+        expect(@up_action).to receive(:call).and_return(:result)
+        expect(@m.perform_up).to eq :result
       end
 
-      it 'should output a status message with the position and name of the migration' do
-        @m.should_receive(:write).with(/Performing Up Migration #1: do_nothing/)
+      it 'outputs a status message with the position and name of the migration' do
+        expect(@m).to receive(:write).with(/Performing Up Migration #1: do_nothing/)
         @m.perform_up
       end
 
-      it 'should not run if it doesnt need to be' do
-        @m.should_receive(:needs_up?).and_return(false)
-        @up_action.should_not_receive(:call)
+      it 'does not run if it doesnt need to be' do
+        expect(@m).to receive(:needs_up?).and_return(false)
+        expect(@up_action).not_to receive(:call)
         @m.perform_up
       end
 
-      it 'should update the migration info table' do
-        @m.should_receive(:update_migration_info).with(:up)
+      it 'updates the migration info table' do
+        expect(@m).to receive(:update_migration_info).with(:up)
         @m.perform_up
       end
 
-      it 'should not update the migration info table if the migration does not need run' do
-        @m.should_receive(:needs_up?).and_return(false)
-        @m.should_not_receive(:update_migration_info)
+      it 'does not update the migration info table if the migration does not need run' do
+        expect(@m).to receive(:needs_up?).and_return(false)
+        expect(@m).not_to receive(:update_migration_info)
         @m.perform_up
       end
 
@@ -175,30 +175,30 @@ describe 'Migration' do
         @m.stub!(:update_migration_info)
       end
 
-      it 'should call the action assigned to @down_action and return the result' do
-        @down_action.should_receive(:call).and_return(:result)
-        @m.perform_down.should == :result
+      it 'calls the action assigned to @down_action and return the result' do
+        expect(@down_action).to receive(:call).and_return(:result)
+        expect(@m.perform_down).to eq :result
       end
 
-      it 'should output a status message with the position and name of the migration' do
-        @m.should_receive(:write).with(/Performing Down Migration #1: do_nothing/)
+      it 'outputs a status message with the position and name of the migration' do
+        expect(@m).to receive(:write).with(/Performing Down Migration #1: do_nothing/)
         @m.perform_down
       end
 
-      it 'should not run if it doesnt need to be' do
-        @m.should_receive(:needs_down?).and_return(false)
-        @down_action.should_not_receive(:call)
+      it 'does not run if it doesnt need to be' do
+        expect(@m).to receive(:needs_down?).and_return(false)
+        expect(@down_action).not_to receive(:call)
         @m.perform_down
       end
 
-      it 'should update the migration info table' do
-        @m.should_receive(:update_migration_info).with(:down)
+      it 'updates the migration info table' do
+        expect(@m).to receive(:update_migration_info).with(:down)
         @m.perform_down
       end
 
-      it 'should not update the migration info table if the migration does not need run' do
-        @m.should_receive(:needs_down?).and_return(false)
-        @m.should_not_receive(:update_migration_info)
+      it 'does not update the migration info table if the migration does not need run' do
+        expect(@m).to receive(:needs_down?).and_return(false)
+        expect(@m).not_to receive(:update_migration_info)
         @m.perform_down
       end
 
@@ -211,13 +211,13 @@ describe 'Migration' do
           @adapter.stub!(:execute)
         end
 
-        it 'should send the SQL it its executing to the adapter execute method' do
-          @adapter.should_receive(:execute).with('SELECT SOME SQL')
+        it 'sends the SQL it its executing to the adapter execute method' do
+          expect(@adapter).to receive(:execute).with('SELECT SOME SQL')
           @m.execute('SELECT SOME SQL')
         end
 
-        it 'should output the SQL it is executing' do
-          @m.should_receive(:write).with(/SELECT SOME SQL/)
+        it 'outputs the SQL it is executing' do
+          expect(@m).to receive(:write).with(/SELECT SOME SQL/)
           @m.execute('SELECT SOME SQL')
         end
       end
@@ -227,13 +227,13 @@ describe 'Migration' do
           @adapter.stub!(:select)
         end
 
-        it 'should send the SQL it its executing to the adapter execute method' do
-          @adapter.should_receive(:select).with('SELECT SOME SQL')
+        it 'sends the SQL it its executing to the adapter execute method' do
+          expect(@adapter).to receive(:select).with('SELECT SOME SQL')
           @m.select('SELECT SOME SQL')
         end
 
-        it 'should output the SQL it is executing' do
-          @m.should_receive(:write).with(/SELECT SOME SQL/)
+        it 'outputs the SQL it is executing' do
+          expect(@m).to receive(:write).with(/SELECT SOME SQL/)
           @m.select('SELECT SOME SQL')
         end
       end
@@ -249,32 +249,32 @@ describe 'Migration' do
             SQL::TableCreator.stub!(:new).and_return(@tc)
           end
 
-          it 'should create a new TableCreator object' do
-            SQL::TableCreator.should_receive(:new).with(@adapter, :users, {}).and_return(@tc)
+          it 'creates a new TableCreator object' do
+            expect(SQL::TableCreator).to receive(:new).with(@adapter, :users, {}).and_return(@tc)
             @m.create_table(:users) { }
           end
 
-          it 'should convert the TableCreator object to an sql statement' do
-            @tc.should_receive(:to_sql).and_return('CREATE TABLE')
+          it 'converts the TableCreator object to an sql statement' do
+            expect(@tc).to receive(:to_sql).and_return('CREATE TABLE')
             @m.create_table(:users) { }
           end
 
-          it 'should execute the create table sql' do
-            @m.should_receive(:execute).with('CREATE TABLE')
+          it 'executes the create table sql' do
+            expect(@m).to receive(:execute).with('CREATE TABLE')
             @m.create_table(:users) { }
           end
 
         end
 
         describe '#drop_table' do
-          it 'should quote the table name' do
-            @adapter.should_receive(:quote_name).with('users')
+          it 'quotes the table name' do
+            expect(@adapter).to receive(:quote_name).with('users')
             @m.drop_table :users
           end
 
-          it 'should execute the DROP TABLE sql for the table' do
+          it 'executes the DROP TABLE sql for the table' do
             @adapter.stub!(:quote_name).and_return("'users'")
-            @m.should_receive(:execute).with(%{DROP TABLE 'users'})
+            expect(@m).to receive(:execute).with(%{DROP TABLE 'users'})
             @m.drop_table :users
           end
 
@@ -286,56 +286,56 @@ describe 'Migration' do
             SQL::TableModifier.stub!(:new).and_return(@tm)
           end
 
-          it 'should create a new TableModifier object' do
-            SQL::TableModifier.should_receive(:new).with(@adapter, :users, {}).and_return(@tm)
+          it 'creates a new TableModifier object' do
+            expect(SQL::TableModifier).to receive(:new).with(@adapter, :users, {}).and_return(@tm)
             @m.modify_table(:users){ }
           end
 
-          it 'should get the statements from the TableModifier object' do
-            @tm.should_receive(:statements).and_return([])
+          it 'gets the statements from the TableModifier object' do
+            expect(@tm).to receive(:statements).and_return([])
             @m.modify_table(:users){ }
           end
 
-          it 'should iterate over the statements and execute each one' do
-            @tm.should_receive(:statements).and_return(['SELECT 1', 'SELECT 2'])
-            @m.should_receive(:execute).with('SELECT 1')
-            @m.should_receive(:execute).with('SELECT 2')
+          it 'iterates over the statements and execute each one' do
+            expect(@tm).to receive(:statements).and_return(['SELECT 1', 'SELECT 2'])
+            expect(@m).to receive(:execute).with('SELECT 1')
+            expect(@m).to receive(:execute).with('SELECT 2')
             @m.modify_table(:users){ }
           end
 
         end
 
         describe 'sorting' do
-          it 'should order things by position' do
+          it 'orders things by position' do
             m1 = DataMapper::Migration.new(1, :do_nothing){}
             m2 = DataMapper::Migration.new(2, :do_nothing_else){}
 
-            (m1 <=> m2).should == -1
+            expect(m1 <=> m2).to eq -1
           end
 
-          it 'should order things by name when they have the same position' do
+          it 'orders things by name when they have the same position' do
             m1 = DataMapper::Migration.new(1, :do_nothing_a){}
             m2 = DataMapper::Migration.new(1, :do_nothing_b){}
 
-            (m1 <=> m2).should == -1
+            expect(m1 <=> m2).to eq -1
           end
 
         end
 
         describe 'formatting output' do
           describe '#say' do
-            it 'should output the message' do
-              @m.should_receive(:write).with(/Paul/)
+            it 'outputs the message' do
+              expect(@m).to receive(:write).with(/Paul/)
               @m.say("Paul")
             end
 
-            it 'should indent the message with 4 spaces by default' do
-              @m.should_receive(:write).with(/^\s{4}/)
+            it 'indents the message with 4 spaces by default' do
+              expect(@m).to receive(:write).with(/^\s{4}/)
               @m.say("Paul")
             end
 
-            it 'should indext the message with a given number of spaces' do
-              @m.should_receive(:write).with(/^\s{3}/)
+            it 'indents the message with a given number of spaces' do
+              expect(@m).to receive(:write).with(/^\s{3}/)
               @m.say("Paul", 3)
             end
           end
@@ -345,13 +345,13 @@ describe 'Migration' do
               @m.stub!(:say)
             end
 
-            it 'should say the message with an indent of 2' do
-              @m.should_receive(:say).with("Paul", 2)
+            it 'says the message with an indent of 2' do
+              expect(@m).to receive(:say).with("Paul", 2)
               @m.say_with_time("Paul"){}
             end
 
-            it 'should output the time it took' do
-              @m.should_receive(:say).with(/\d+/, 2)
+            it 'outputs the time it took' do
+              expect(@m).to receive(:say).with(/\d+/, 2)
               @m.say_with_time("Paul"){}
             end
           end
@@ -362,14 +362,14 @@ describe 'Migration' do
               @m = DataMapper::Migration.new(1, :do_nothing) {}
             end
 
-            it 'should puts the message' do
-              @m.should_receive(:puts).with("Paul")
+            it 'puts the message' do
+              expect(@m).to receive(:puts).with("Paul")
               @m.write("Paul")
             end
 
-            it 'should not puts the message if @verbose is false' do
+            it 'does not puts the message if @verbose is false' do
               @m.instance_variable_set(:@verbose, false)
-              @m.should_not_receive(:puts)
+              expect(@m).not_to receive(:puts)
               @m.write("Paul")
             end
 
@@ -385,111 +385,111 @@ describe 'Migration' do
           end
 
           describe '#update_migration_info' do
-            it 'should add a record of the migration' do
-              @m.should_receive(:execute).with(
+            it 'adds a record of the migration' do
+              expect(@m).to receive(:execute).with(
                 %Q{INSERT INTO 'migration_info' ('migration_name') VALUES ('do_nothing')}
               )
               @m.update_migration_info(:up)
             end
 
-            it 'should remove the record of the migration' do
-              @m.should_receive(:execute).with(
+            it 'removes the record of the migration' do
+              expect(@m).to receive(:execute).with(
                 %Q{DELETE FROM 'migration_info' WHERE 'migration_name' = 'do_nothing'}
               )
               @m.update_migration_info(:down)
             end
 
-            it 'should try to create the migration_info table' do
-              @m.should_receive(:create_migration_info_table_if_needed)
+            it 'tries to create the migration_info table' do
+              expect(@m).to receive(:create_migration_info_table_if_needed)
               @m.update_migration_info(:up)
             end
           end
 
           describe '#create_migration_info_table_if_needed' do
-            it 'should create the migration info table' do
-              @m.should_receive(:migration_info_table_exists?).and_return(false)
-              @m.should_receive(:execute).with(
+            it 'creates the migration info table' do
+              expect(@m).to receive(:migration_info_table_exists?).and_return(false)
+              expect(@m).to receive(:execute).with(
                 %Q{CREATE TABLE 'migration_info' ('migration_name' VARCHAR(255) UNIQUE)}
               )
               @m.create_migration_info_table_if_needed
             end
 
-            it 'should not try to create the migration info table if it already exists' do
-              @m.should_receive(:migration_info_table_exists?).and_return(true)
-              @m.should_not_receive(:execute)
+            it 'does not try to create the migration info table if it already exists' do
+              expect(@m).to receive(:migration_info_table_exists?).and_return(true)
+              expect(@m).not_to receive(:execute)
               @m.create_migration_info_table_if_needed
             end
           end
 
-          it 'should quote the name of the migration for use in sql' do
-            @m.quoted_name.should == %{'do_nothing'}
+          it 'quotes the name of the migration for use in sql' do
+            expect(@m.quoted_name).to eq %{'do_nothing'}
           end
 
-          it 'should query the adapter to see if the migration_info table exists' do
-            @adapter.should_receive(:storage_exists?).with('migration_info').and_return(true)
-            @m.migration_info_table_exists?.should == true
+          it 'queries the adapter to see if the migration_info table exists' do
+            expect(@adapter).to receive(:storage_exists?).with('migration_info').and_return(true)
+            expect(@m.migration_info_table_exists?).to eq true
           end
 
           describe '#migration_record' do
-            it 'should query for the migration' do
-              @adapter.should_receive(:select).with(
+            it 'queries for the migration' do
+              expect(@adapter).to receive(:select).with(
                 %Q{SELECT 'migration_name' FROM 'migration_info' WHERE 'migration_name' = 'do_nothing'}
               )
               @m.migration_record
             end
 
-            it 'should not try to query if the table does not exist' do
+            it 'does not try to query if the table does not exist' do
               @m.stub!(:migration_info_table_exists?).and_return(false)
-              @adapter.should_not_receive(:select)
+              expect(@adapter).not_to receive(:select)
               @m.migration_record
             end
 
           end
 
           describe '#needs_up?' do
-            it 'should be true if there is no record' do
-              @m.should_receive(:migration_record).and_return([])
-              @m.needs_up?.should == true
+            it 'is true if there is no record' do
+              expect(@m).to receive(:migration_record).and_return([])
+              expect(@m.needs_up?).to eq true
             end
 
-            it 'should be false if the record exists' do
-              @m.should_receive(:migration_record).and_return([:not_empty])
-              @m.needs_up?.should == false
+            it 'is false if the record exists' do
+              expect(@m).to receive(:migration_record).and_return([:not_empty])
+              expect(@m.needs_up?).to eq false
             end
 
-            it 'should be true if there is no migration_info table' do
-              @m.should_receive(:migration_info_table_exists?).and_return(false)
-              @m.needs_up?.should == true
+            it 'is true if there is no migration_info table' do
+              expect(@m).to receive(:migration_info_table_exists?).and_return(false)
+              expect(@m.needs_up?).to eq true
             end
 
           end
 
           describe '#needs_down?' do
-            it 'should be false if there is no record' do
-              @m.should_receive(:migration_record).and_return([])
-              @m.needs_down?.should == false
+            it 'is false if there is no record' do
+              expect(@m).to receive(:migration_record).and_return([])
+              expect(@m.needs_down?).to eq false
             end
 
-            it 'should be true if the record exists' do
-              @m.should_receive(:migration_record).and_return([:not_empty])
-              @m.needs_down?.should == true
+            it 'is true if the record exists' do
+              expect(@m).to receive(:migration_record).and_return([:not_empty])
+              expect(@m.needs_down?).to eq true
             end
 
-            it 'should be false if there is no migration_info table' do
-              @m.should_receive(:migration_info_table_exists?).and_return(false)
-              @m.needs_down?.should == false
+            it 'is false if there is no migration_info table' do
+              expect(@m).to receive(:migration_info_table_exists?).and_return(false)
+              expect(@m.needs_down?).to eq false
             end
 
           end
 
-          it 'should have the adapter quote the migration_info table' do
-            @adapter.should_receive(:quote_name).with('migration_info').and_return("'migration_info'")
-            @m.migration_info_table.should == "'migration_info'"
+          it 'has the adapter quote the migration_info table' do
+            expect(@adapter).to receive(:quote_name).with('migration_info').and_return("'migration_info'")
+            expect(@m.migration_info_table).to eq "'migration_info'"
           end
 
-          it 'should have a quoted migration_name_column' do
-            @adapter.should_receive(:quote_name).with('migration_name').and_return("'migration_name'")
-            @m.migration_name_column.should == "'migration_name'"
+          it 'has a quoted migration_name_column' do
+            expect(@adapter).to receive(:quote_name).with('migration_name').and_return("'migration_name'")
+            expect(@m.migration_name_column).to eq "'migration_name'"
           end
 
         end

@@ -5,8 +5,8 @@ describe SQL::Table do
   let(:column_a) { double('column', name: 'id') }
   let(:column_b) { double('column', name: 'login') }
   let(:table_name) { 'table_name' }
-  %w{name columns}.each do |meth|
-    it "should have a ##{meth} attribute" do
+  %w(name columns).each do |meth|
+    it "has a ##{meth} attribute" do
       expect(table).to respond_to(meth.intern)
     end
   end
@@ -16,7 +16,7 @@ describe SQL::Table do
     expect(table.to_s).to eq 'table_name'
   end
 
-  it 'should find a column by name' do
+  it 'finds a column by name' do
     table.columns = [column_a, column_b]
 
     expect(table.column('id')).to eq column_a

@@ -9,15 +9,15 @@ describe "SQLite3 Extensions" do
   subject(:se) { SqliteExtension.new }
   let(:table) { instance_double('SQLite3 Table') }
 
-  it 'should support schema-level transactions' do
+  it 'supports schema-level transactions' do
     expect(se.supports_schema_transactions?).to be(true)
   end
 
-  it 'should support the serial column attribute' do
+  it 'supports the serial column attribute' do
     expect(se.supports_serial?).to be(true)
   end
 
-  it 'should create a table object from the name' do
+  it 'creates a table object from the name' do
     expect(SQL::Sqlite::Table).to receive(:new).with(se, 'users').and_return(table)
 
     expect(se.table('users')).to eq table
@@ -29,7 +29,7 @@ describe "SQLite3 Extensions" do
       se.instance_variable_set('@uri', uri)
     end
 
-    it 'should rm the db file' do
+    it "rm's the db file" do
       expect(FileUtils).to receive(:rm_f).with('/foo/bar.db')
       se.recreate_database
     end
@@ -47,20 +47,20 @@ describe "SQLite3 Extensions" do
       allow(adapter).to receive(:table_info).with('users').and_return([cs1, cs2])
     end
 
-    it 'should initialize columns by querying the table' do
+    it 'initializes columns by querying the table' do
       expect(SQL::Sqlite::Column).to receive(:new).with(cs1).and_return(col1)
       expect(SQL::Sqlite::Column).to receive(:new).with(cs2).and_return(col2)
       expect(adapter).to receive(:table_info).with('users').and_return([cs1,cs2])
       t
     end
 
-    it 'should create SQLite3 Column objects from the returned column structs' do
+    it 'creates SQLite3 Column objects from the returned column structs' do
       expect(SQL::Sqlite::Column).to receive(:new).with(cs1).and_return(col1)
       expect(SQL::Sqlite::Column).to receive(:new).with(cs2).and_return(col2)
       t
     end
 
-    it 'should set the @columns to the looked-up columns' do
+    it 'sets the @columns to the looked-up columns' do
       expect(SQL::Sqlite::Column).to receive(:new).with(cs1).and_return(col1)
       expect(SQL::Sqlite::Column).to receive(:new).with(cs2).and_return(col2)
       expect(t.columns).to eq [col1, col2]
@@ -80,23 +80,23 @@ describe "SQLite3 Extensions" do
       )
     }
 
-    it 'should set the name from the name value' do
+    it 'sets the name from the name value' do
       expect(c.name).to eq 'id'
     end
 
-    it 'should set the type from the type value' do
+    it 'sets the type from the type value' do
       expect(c.type).to eq 'integer'
     end
 
-    it 'should set the default_value from the dflt_value value' do
+    it 'sets the default_value from the dflt_value value' do
       expect(c.default_value).to eq 123
     end
 
-    it 'should set the primary_key from the pk value' do
+    it 'sets the primary_key from the pk value' do
       expect(c.primary_key).to eq true
     end
 
-    it 'should set not_null based on the notnull value' do
+    it 'sets not_null based on the notnull value' do
       expect(c.not_null).to eq true
     end
   end

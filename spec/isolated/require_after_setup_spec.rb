@@ -19,6 +19,6 @@ if %w(postgres mysql sqlite oracle sqlserver).include?(ENV['ADAPTER'])
       @model = Person
     end
 
-    it_should_behave_like "require 'dm-migrations'"
+    it_behaves_like "require 'dm-migrations'"
   end
 end
