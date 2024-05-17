@@ -1,9 +1,9 @@
-require 'spec_helper'
+require_relative '../spec_helper'
 
 require 'dm-migrations/auto_migration'
 
 module DataMapper
-  module Property
+  class Property
     class NumericString < DataMapper::Property::String
       default 0
 
@@ -202,25 +202,26 @@ describe DataMapper::Migrations do
               @response = capture_log(DataObjects::Mysql) { @model.auto_migrate! }
             end
 
-            it 'should return true' do
-              @response.should be(true)
+            it 'returns true' do
+              expect(@response).to be(true)
             end
 
-            it "should create a #{statement} column" do
-              @output.last.should =~ /\ACREATE TABLE `blog_articles` \(`id` #{Regexp.escape(statement)} NOT NULL, PRIMARY KEY\(`id`\)\) ENGINE = InnoDB CHARACTER SET [a-z\d]+ COLLATE (?:[a-z\d](?:_?[a-z\d]+)*)\z/
+            it "creates a #{statement} column" do
+              expect(@output.last).to match /\ACREATE TABLE `blog_articles` \(`id` #{Regexp.escape(statement)} NOT NULL, PRIMARY KEY\(`id`\)\) ENGINE = InnoDB CHARACTER SET [a-z\d]+ COLLATE (?:[a-z\d](?:_?[a-z\d]+)*)\z/
             end
 
             %i(min max).each do |key|
               next unless (value = options[key])
 
-              it "should allow the #{key} value #{value} to be stored" do
-                pending_if "#{value} causes problem with JRuby 1.5.2 parser",
-                           RUBY_PLATFORM[/java/] && JRUBY_VERSION < '1.5.6' && value == -9_223_372_036_854_775_808 do
-                  lambda {
-                    resource = @model.create(@property => value)
-                    @model.first(@property => value).should == resource
-                  }.should_not raise_error
+              it "allows the #{key} value #{value} to be stored" do
+                if RUBY_PLATFORM[/java/] && JRUBY_VERSION < '1.5.6' && value == -9_223_372_036_854_775_808
+                  pending "#{value} causes problem with JRuby 1.5.2 parser"
                 end
+
+                expect {
+                  resource = @model.create(@property => value)
+                  expect(@model.first(@property => value)).to eq resource
+                }.not_to raise_error
               end
             end
           end
@@ -239,8 +240,8 @@ describe DataMapper::Migrations do
             @response = capture_log(DataObjects::Mysql) { @model.auto_migrate! }
           end
 
-          it 'should create an INTEGER column' do
-            @output.last.should =~ /\ACREATE TABLE `blog_articles` \(`id` INT\(10\) UNSIGNED NOT NULL AUTO_INCREMENT, `number` INTEGER, PRIMARY KEY\(`id`\)\) ENGINE = InnoDB CHARACTER SET [a-z\d]+ COLLATE [a-z\d](?:_?[a-z\d]+)*\z/
+          it 'creates an INTEGER column' do
+            expect(@output.last).to match /\ACREATE TABLE `blog_articles` \(`id` INT\(10\) UNSIGNED NOT NULL AUTO_INCREMENT, `number` INTEGER, PRIMARY KEY\(`id`\)\) ENGINE = InnoDB CHARACTER SET [a-z\d]+ COLLATE [a-z\d](?:_?[a-z\d]+)*\z/
           end
         end
       end
@@ -273,12 +274,12 @@ describe DataMapper::Migrations do
               @response = capture_log(DataObjects::Mysql) { @model.auto_migrate! }
             end
 
-            it 'should return true' do
-              @response.should be(true)
+            it 'returns true' do
+              expect(@response).to be(true)
             end
 
-            it "should create a #{statement} column" do
-              @output.last.should =~ /\ACREATE TABLE `blog_articles` \(`id` INT\(10\) UNSIGNED NOT NULL AUTO_INCREMENT, `body` #{Regexp.escape(statement)}, PRIMARY KEY\(`id`\)\) ENGINE = InnoDB CHARACTER SET [a-z\d]+ COLLATE (?:[a-z\d](?:_?[a-z\d]+)*)\z/
+            it "creates a #{statement} column" do
+              expect(@output.last).to match /\ACREATE TABLE `blog_articles` \(`id` INT\(10\) UNSIGNED NOT NULL AUTO_INCREMENT, `body` #{Regexp.escape(statement)}, PRIMARY KEY\(`id`\)\) ENGINE = InnoDB CHARACTER SET [a-z\d]+ COLLATE (?:[a-z\d](?:_?[a-z\d]+)*)\z/
             end
           end
         end
@@ -305,12 +306,12 @@ describe DataMapper::Migrations do
               @response = capture_log(DataObjects::Mysql) { @model.auto_migrate! }
             end
 
-            it 'should return true' do
-              @response.should be(true)
+            it 'returns true' do
+              expect(@response).to be(true)
             end
 
-            it "should create a #{statement} column" do
-              @output.last.should =~ /\ACREATE TABLE `blog_articles` \(`id` INT\(10\) UNSIGNED NOT NULL AUTO_INCREMENT, `title` #{Regexp.escape(statement)}, PRIMARY KEY\(`id`\)\) ENGINE = InnoDB CHARACTER SET [a-z\d]+ COLLATE (?:[a-z\d](?:_?[a-z\d]+)*)\z/
+            it "creates a #{statement} column" do
+              expect(@output.last).to match /\ACREATE TABLE `blog_articles` \(`id` INT\(10\) UNSIGNED NOT NULL AUTO_INCREMENT, `title` #{Regexp.escape(statement)}, PRIMARY KEY\(`id`\)\) ENGINE = InnoDB CHARACTER SET [a-z\d]+ COLLATE (?:[a-z\d](?:_?[a-z\d]+)*)\z/
             end
           end
         end
@@ -324,8 +325,8 @@ describe DataMapper::Migrations do
           @response = capture_log(DataObjects::Mysql) { @model.auto_migrate! }
         end
 
-        it "should create a VARCHAR(50) column with a default of '0'" do
-          @output.last.should =~ /\ACREATE TABLE `blog_articles` \(`id` INT\(10\) UNSIGNED NOT NULL AUTO_INCREMENT, `number` VARCHAR\(50\) DEFAULT '0', PRIMARY KEY\(`id`\)\) ENGINE = InnoDB CHARACTER SET [a-z\d]+ COLLATE [a-z\d](?:_?[a-z\d]+)*\z/
+        it "creates a VARCHAR(50) column with a default of '0'" do
+          expect(@output.last).to match /\ACREATE TABLE `blog_articles` \(`id` INT\(10\) UNSIGNED NOT NULL AUTO_INCREMENT, `number` VARCHAR\(50\) DEFAULT '0', PRIMARY KEY\(`id`\)\) ENGINE = InnoDB CHARACTER SET [a-z\d]+ COLLATE [a-z\d](?:_?[a-z\d]+)*\z/
         end
       end
 
@@ -344,8 +345,8 @@ describe DataMapper::Migrations do
           @response = capture_log(DataObjects::Mysql) { @model.auto_migrate! }
         end
 
-        it 'should create a large VARCHAR column' do
-          @output.last.should =~ /\ACREATE TABLE `blog_articles` \(`id` INT\(10\) UNSIGNED NOT NULL AUTO_INCREMENT, `number` VARCHAR\(16383\), PRIMARY KEY\(`id`\)\) ENGINE = InnoDB CHARACTER SET [a-z\d]+ COLLATE [a-z\d](?:_?[a-z\d]+)*\z/
+        it 'creates a large VARCHAR column' do
+          expect(@output.last).to match /\ACREATE TABLE `blog_articles` \(`id` INT\(10\) UNSIGNED NOT NULL AUTO_INCREMENT, `number` VARCHAR\(16383\), PRIMARY KEY\(`id`\)\) ENGINE = InnoDB CHARACTER SET [a-z\d]+ COLLATE [a-z\d](?:_?[a-z\d]+)*\z/
         end
       end
     end
@@ -395,25 +396,26 @@ describe DataMapper::Migrations do
               @response = capture_log(DataObjects::Postgres) { @model.auto_migrate! }
             end
 
-            it 'should return true' do
-              @response.should be(true)
+            it 'returns true' do
+              expect(@response).to be(true)
             end
 
-            it "should create a #{statement} column" do
-              @output[-2].should == "CREATE TABLE \"blog_articles\" (\"id\" #{statement} NOT NULL, PRIMARY KEY(\"id\"))"
+            it "creates a #{statement} column" do
+              expect(@output[-2]).to eq "CREATE TABLE \"blog_articles\" (\"id\" #{statement} NOT NULL, PRIMARY KEY(\"id\"))"
             end
 
             %i(min max).each do |key|
               next unless (value = options[key])
 
-              it "should allow the #{key} value #{value} to be stored" do
-                pending_if "#{value} causes problem with the JRuby < 1.6 parser",
-                           RUBY_PLATFORM =~ /java/ && JRUBY_VERSION < '1.6' && value == -9_223_372_036_854_775_808 do
-                  lambda {
-                    resource = @model.create(@property => value)
-                    @model.first(@property => value).should eql(resource)
-                  }.should_not raise_error
+              it "allows the #{key} value #{value} to be stored" do
+                if RUBY_PLATFORM =~ /java/ && JRUBY_VERSION < '1.6' && value == -9_223_372_036_854_775_808
+                  pending "#{value} causes problem with the JRuby < 1.6 parser"
                 end
+
+                expect {
+                  resource = @model.create(@property => value)
+                  expect(@model.first(@property => value)).to eql(resource)
+                }.not_to raise_error
               end
             end
           end
@@ -439,22 +441,22 @@ describe DataMapper::Migrations do
               @response = capture_log(DataObjects::Postgres) { @model.auto_migrate! }
             end
 
-            it 'should return true' do
-              @response.should be(true)
+            it 'returns true' do
+              expect(@response).to be(true)
             end
 
-            it "should create a #{statement} column" do
-              @output[-2].should == "CREATE TABLE \"blog_articles\" (\"id\" #{statement} NOT NULL, PRIMARY KEY(\"id\"))"
+            it "creates a #{statement} column" do
+              expect(@output[-2]).to eq "CREATE TABLE \"blog_articles\" (\"id\" #{statement} NOT NULL, PRIMARY KEY(\"id\"))"
             end
 
             %i(min max).each do |key|
               next unless (value = options[key])
 
-              it "should allow the #{key} value #{value} to be stored" do
-                lambda {
+              it "allows the #{key} value #{value} to be stored" do
+                expect {
                   resource = @model.create(@property => value)
-                  @model.first(@property => value).should eql(resource)
-                }.should_not raise_error
+                  expect(@model.first(@property => value)).to eql(resource)
+                }.not_to raise_error
               end
             end
           end
@@ -482,12 +484,12 @@ describe DataMapper::Migrations do
               @response = capture_log(DataObjects::Postgres) { @model.auto_migrate! }
             end
 
-            it 'should return true' do
-              @response.should be(true)
+            it 'returns true' do
+              expect(@response).to be(true)
             end
 
-            it "should create a #{statement} column" do
-              @output[-2].should == "CREATE TABLE \"blog_articles\" (\"id\" SERIAL NOT NULL, \"title\" #{statement}, PRIMARY KEY(\"id\"))"
+            it "creates a #{statement} column" do
+              expect(@output[-2]).to eq "CREATE TABLE \"blog_articles\" (\"id\" SERIAL NOT NULL, \"title\" #{statement}, PRIMARY KEY(\"id\"))"
             end
           end
         end
@@ -501,8 +503,8 @@ describe DataMapper::Migrations do
           @response = capture_log(DataObjects::Postgres) { @model.auto_migrate! }
         end
 
-        it "should create a VARCHAR(50) column with a default of '0'" do
-          @output[-2].should == "CREATE TABLE \"blog_articles\" (\"id\" SERIAL NOT NULL, \"number\" VARCHAR(50) DEFAULT '0', PRIMARY KEY(\"id\"))"
+        it "creates a VARCHAR(50) column with a default of '0'" do
+          expect(@output[-2]).to eq "CREATE TABLE \"blog_articles\" (\"id\" SERIAL NOT NULL, \"number\" VARCHAR(50) DEFAULT '0', PRIMARY KEY(\"id\"))"
         end
       end
     end
@@ -556,24 +558,24 @@ describe DataMapper::Migrations do
               @response = capture_log(DataObjects::Sqlserver) { @model.auto_migrate! }
             end
 
-            it 'should return true' do
-              @response.should be(true)
+            it 'returns true' do
+              expect(@response).to be(true)
             end
 
-            it "should create a #{statement} column" do
-              @output.last.should == "CREATE TABLE \"blog_articles\" (\"id\" #{statement} NOT NULL, PRIMARY KEY(\"id\"))"
+            it "creates a #{statement} column" do
+              expect(@output.last).to eq "CREATE TABLE \"blog_articles\" (\"id\" #{statement} NOT NULL, PRIMARY KEY(\"id\"))"
             end
 
             %i(min max).each do |key|
               next unless (value = options[key])
 
-              it "should allow the #{key} value #{value} to be stored" do
-                pending_if "#{value} causes problem with JRuby 1.5.2 parser", RUBY_PLATFORM =~ /java/ && value == -9_223_372_036_854_775_808 do
-                  lambda {
-                    resource = @model.create(@property => value)
-                    @model.first(@property => value).should eql(resource)
-                  }.should_not raise_error
-                end
+              it "allows the #{key} value #{value} to be stored" do
+                pending "#{value} causes problem with JRuby 1.5.2 parser" if RUBY_PLATFORM =~ /java/ && value == -9_223_372_036_854_775_808
+
+                expect {
+                  resource = @model.create(@property => value)
+                  expect(@model.first(@property => value)).to eql(resource)
+                }.not_to raise_error
               end
             end
           end

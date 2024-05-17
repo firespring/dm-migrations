@@ -1,4 +1,4 @@
-require 'spec_helper'
+require_relative '../../spec_helper'
 
 # a dummy class to include the module into
 class PostgresExtension
@@ -10,88 +10,81 @@ describe "Postgres Extensions" do
     @pe = PostgresExtension.new
   end
 
-  it 'should support schema-level transactions' do
-    @pe.supports_schema_transactions?.should be(true)
+  it 'supports schema-level transactions' do
+    expect(@pe.supports_schema_transactions?).to be(true)
   end
 
-  it 'should support the serial column attribute' do
-    @pe.supports_serial?.should be(true)
+  it 'supports the serial column attribute' do
+    expect(@pe.supports_serial?).to be(true)
   end
 
-  it 'should create a table object from the name' do
-    table = mock('Postgres Table')
-    SQL::Postgres::Table.should_receive(:new).with(@pe, 'users').and_return(table)
+  it 'creates a table object from the name' do
+    table = instance_double('Postgres Table')
+    expect(SQL::Postgres::Table).to receive(:new).with(@pe, 'users').and_return(table)
 
-    @pe.table('users').should == table
+    expect(@pe.table('users')).to eq table
   end
 
-  describe 'recreating the database' do
-  end
+  describe 'recreating the database'
 
   describe 'Table' do
     before do
-      @cs1 = mock('Column Struct')
-      @cs2 = mock('Column Struct')
-      @adapter = mock('adapter', :select => [])
-      @adapter.stub!(:query_table).with('users').and_return([@cs1, @cs2])
+      @cs1 = instance_double('Column Struct')
+      @cs2 = instance_double('Column Struct')
+      @adapter = instance_double('adapter', select: [])
+      allow(@adapter).to receive(:query_table).with('users').and_return([@cs1, @cs2])
 
-      @col1 = mock('Postgres Column')
-      @col2 = mock('Postgres Column')
+      @col1 = instance_double('Postgres Column')
+      @col2 = instance_double('Postgres Column')
     end
 
-    it 'should initialize columns by querying the table' do
-      SQL::Postgres::Column.should_receive(:new).with(@cs1).and_return(@col1)
-      SQL::Postgres::Column.should_receive(:new).with(@cs2).and_return(@col2)
-      @adapter.should_receive(:query_table).with('users').and_return([@cs1,@cs2])
+    it 'initializes columns by querying the table' do
+      expect(SQL::Postgres::Column).to receive(:new).with(@cs1).and_return(@col1)
+      expect(SQL::Postgres::Column).to receive(:new).with(@cs2).and_return(@col2)
+      expect(@adapter).to receive(:query_table).with('users').and_return([@cs1,@cs2])
       SQL::Postgres::Table.new(@adapter, 'users')
     end
 
-    it 'should create Postgres Column objects from the returned column structs' do
-      SQL::Postgres::Column.should_receive(:new).with(@cs1).and_return(@col1)
-      SQL::Postgres::Column.should_receive(:new).with(@cs2).and_return(@col2)
+    it 'creates Postgres Column objects from the returned column structs' do
+      expect(SQL::Postgres::Column).to receive(:new).with(@cs1).and_return(@col1)
+      expect(SQL::Postgres::Column).to receive(:new).with(@cs2).and_return(@col2)
       SQL::Postgres::Table.new(@adapter, 'users')
     end
 
-    it 'should set the @columns to the looked-up columns' do
-      SQL::Postgres::Column.should_receive(:new).with(@cs1).and_return(@col1)
-      SQL::Postgres::Column.should_receive(:new).with(@cs2).and_return(@col2)
+    it 'sets the @columns to the looked-up columns' do
+      expect(SQL::Postgres::Column).to receive(:new).with(@cs1).and_return(@col1)
+      expect(SQL::Postgres::Column).to receive(:new).with(@cs2).and_return(@col2)
       t = SQL::Postgres::Table.new(@adapter, 'users')
-      t.columns.should == [@col1, @col2]
+      expect(t.columns).to eq [@col1, @col2]
     end
 
-    describe '#query_column_constraints' do
-
-    end
-
+    describe '#query_column_constraints'
   end
 
   describe 'Column' do
     before do
-      @cs = mock('Struct',
-                 :column_name     => 'id',
-                 :data_type       => 'integer',
-                 :column_default  => 123,
-                 :is_nullable     => 'NO')
+      @cs = instance_double('Struct',
+                            column_name: 'id',
+                            data_type: 'integer',
+                            column_default: 123,
+                            is_nullable: 'NO')
       @c = SQL::Postgres::Column.new(@cs)
     end
 
-    it 'should set the name from the column_name value' do
-      @c.name.should == 'id'
+    it 'sets the name from the column_name value' do
+      expect(@c.name).to eq 'id'
     end
 
-    it 'should set the type from the data_type value' do
-      @c.type.should == 'integer'
+    it 'sets the type from the data_type value' do
+      expect(@c.type).to eq 'integer'
     end
 
-    it 'should set the default_value from the column_default value' do
-      @c.default_value.should == 123
+    it 'sets the default_value from the column_default value' do
+      expect(@c.default_value).to eq 123
     end
 
-    it 'should set not_null based on the is_nullable value' do
-      @c.not_null.should == true
+    it 'sets not_null based on the is_nullable value' do
+      expect(@c.not_null).to eq true
     end
-
   end
-
-
 end

@@ -1,10 +1,10 @@
-require 'spec/matchers/migration_matchers'
+require_relative '../matchers/migration_matchers'
 
-require 'spec'
+require 'rspec'
 
 module Spec
   module Example
-    class MigrationExampleGroup < Spec::Example::ExampleGroup
+    class MigrationExampleGroup < RSpec::Core::ExampleGroup
       include Spec::Matchers::Migration
 
       before(:all) do
@@ -63,7 +63,7 @@ module Spec
         this_migration.adapter.table(table_name)
       end
 
-      Spec::Example::ExampleGroupFactory.register(:migration, self)
+      Spec::Example::MigrationExampleGroup.register
     end
   end
 end
