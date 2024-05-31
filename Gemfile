@@ -3,7 +3,7 @@ source 'https://rubygems.org'
 gemspec
 
 DM_VERSION     = '~> 1.3.0.beta'.freeze
-DO_VERSION     = '~> 0.10.15'.freeze
+DO_VERSION     = '~> 0.10.17'.freeze
 DM_DO_ADAPTERS = %w(sqlite postgres mysql oracle sqlserver).freeze
 CURRENT_BRANCH = ENV.fetch('GIT_BRANCH', 'master')
 
