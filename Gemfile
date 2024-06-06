@@ -19,6 +19,7 @@ group :development do
   gem 'rake', '~> 13.1'
   gem 'rake-compiler', '~> 1.2'
   gem 'rspec', '~> 3.13'
+  gem 'simplecov'
 end
 
 group :datamapper do
