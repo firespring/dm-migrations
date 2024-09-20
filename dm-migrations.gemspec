@@ -11,7 +11,7 @@ Gem::Specification.new do |gem|
   gem.files = `git ls-files`.split("\n")
   gem.extra_rdoc_files = %w(LICENSE README.rdoc)
 
-  gem.name          = 'dm-migrations'
+  gem.name          = 'sbf-dm-migrations'
   gem.require_paths = ['lib']
   gem.version       = DataMapper::Migrations::VERSION
   gem.required_ruby_version = '>= 2.7.8'
