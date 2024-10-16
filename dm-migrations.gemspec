@@ -1,8 +1,8 @@
 require File.expand_path('../lib/dm-migrations/version', __FILE__)
 
 Gem::Specification.new do |gem|
-  gem.authors       = ['Dan Kubb']
-  gem.email         = ['dan.kubb@gmail.com']
+  gem.authors       = ['opensource_firespring']
+  gem.email         = ['opensource@firespring.com']
   gem.summary       = 'DataMapper plugin for writing and spec-ing migrations'
   gem.description   = 'DataMapper plugin for modifying and maintaining database structure, triggers, stored procedures, and data'
   gem.homepage      = 'https://datamapper.org'
