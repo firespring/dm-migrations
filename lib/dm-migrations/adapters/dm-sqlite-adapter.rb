@@ -4,7 +4,7 @@ require 'dm-migrations/adapters/dm-do-adapter'
 module DataMapper
   module Migrations
     module SqliteAdapter
-      include SQL, DataObjectsAdapter
+      include DataObjectsAdapter
 
       # @api private
       def self.included(base)
@@ -72,6 +72,8 @@ module DataMapper
           @sqlite_version ||= select('SELECT sqlite_version(*)').first.freeze
         end
       end
+
+      include SQL
 
       module ClassMethods
         # Types for SQLite 3 databases.
